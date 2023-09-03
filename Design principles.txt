@@ -1,0 +1,42 @@
+Window is composed from 3 main parts:
+ - Content area
+ - Title bar area
+ - 
+
+
+
+
+Window concepts:
+
+FRAMERATE/TICKRATE:
+ - The window is rendered using direct2D which draws to a swap chain
+ - If the window redraws its content every frame, the framerate is either locked to the screen refresh rate or uncapped, depending on the sync interval option in `Present`
+ - The update function is called after every swap chain swap
+ - If the window content is not redrawn after an update-draw cycle, the UI thread sleeps for a small amount which, due to thread scheduling, results in a random update function call interval
+
+LAYERED WINDOW SIZE/REDRAW SYNCHRONIZATION:
+ - When calling UpdateLayeredWindowIndirect, the DC and window must be the exact same size
+ - Since UpdateLayeredWindowIndirect is called in the UI thread and window size is updated in the Message thread, unexpected bugs can arise
+
+UI thread:
+ - Lock window size
+ - Get size from last WM_SIZE message
+ - If size changed, swap chain is resized, then all scenes are resized
+ - If redraw is required:
+   - Redraw content
+   - Update layered window
+     - DC is initialized with swapchain content
+     - Window size and position is updated with values from GetWindowRect
+     - UpdateLayeredWindowIndirect is called
+   - Call swapchain present to sync to monitor refresh rate
+ - Unlock window size
+
+Message thread:
+ - Receive WINDOWPOSCHANGING message
+ - Lock window size
+ - Lock message size
+ - Unlock window size
+ - Window is resized by the OS
+ - Receive WM_SIZE
+ - Unlock message size
+

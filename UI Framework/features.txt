@@ -1,0 +1,13 @@
+Multiple windows
+Scene mouse input passthrough
+Customizable non client area
+
+Caption items:
+ - Default:
+   - Close/minimize/maximize buttons
+   - Window move area
+   - Title position
+   - Icon
+   - Menu buttons
+ - Custom:
+   - zcom UI elements
