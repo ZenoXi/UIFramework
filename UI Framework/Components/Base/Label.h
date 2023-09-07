@@ -43,7 +43,7 @@ namespace zcom
     };
 
     // To enable ClearType, the ignore alpha parameter in the component base must be set to true
-    class Label : public Base, public KeyboardEventHandler
+    class Label : public Component, public KeyboardEventHandler
     {
 #pragma region base_class
     protected:
@@ -313,9 +313,9 @@ namespace zcom
             {
                 // Set hover text if contents are cut off
                 if (charactersCut > 0)
-                    Base::SetHoverText(_text);
+                    Component::SetHoverText(_text);
                 else
-                    Base::SetHoverText(L"");
+                    Component::SetHoverText(L"");
             }
 
             // Alignment
@@ -387,8 +387,8 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
-        Label(Scene* scene) : Base(scene) {}
+        friend class Component;
+        Label(Scene* scene) : Component(scene) {}
         void Init(std::wstring text = L"")
         {
             _text = text;
@@ -692,7 +692,7 @@ namespace zcom
             else
                 _customHoverText = false;
 
-            Base::SetHoverText(text);
+            Component::SetHoverText(text);
         }
 
         LineMetricsResult LineMetrics() const

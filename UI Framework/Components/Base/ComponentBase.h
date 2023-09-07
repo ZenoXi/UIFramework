@@ -40,14 +40,14 @@ namespace zcom
         bool valid;
     };
 
-    class Base;
+    class Component;
     // Class that contains all components that handled an event.
     class EventTargets
     {
     public:
         struct Params
         {
-            Base* target;
+            Component* target;
             int x;
             int y;
         };
@@ -76,19 +76,19 @@ namespace zcom
         EventTargets(const EventTargets& other) = delete;
         EventTargets& operator=(const EventTargets& other) = delete;
 
-        EventTargets Add(Base* item, int x = std::numeric_limits<int>::min(), int y = std::numeric_limits<int>::min()) &&
+        EventTargets Add(Component* item, int x = std::numeric_limits<int>::min(), int y = std::numeric_limits<int>::min()) &&
         {
             _targets.push_back({ item, x, y });
             return std::move(*this);
         }
 
-        EventTargets& Add(Base* item, int x = std::numeric_limits<int>::min(), int y = std::numeric_limits<int>::min()) &
+        EventTargets& Add(Component* item, int x = std::numeric_limits<int>::min(), int y = std::numeric_limits<int>::min()) &
         {
             _targets.push_back({ item, x, y });
             return *this;
         }
 
-        void Remove(Base* item)
+        void Remove(Component* item)
         {
             auto it = std::find_if(_targets.begin(), _targets.end(), [item](Params p) { return p.target == item; });
             if (it != _targets.end())
@@ -105,12 +105,12 @@ namespace zcom
             return _targets.size();
         }
 
-        bool Contains(Base* item) const
+        bool Contains(Component* item) const
         {
             return std::find_if(_targets.begin(), _targets.end(), [item](Params p) { return p.target == item; }) != _targets.end();
         }
 
-        Base* MainTarget() const
+        Component* MainTarget() const
         {
             if (!_targets.empty())
                 return _targets.front().target;
@@ -125,7 +125,7 @@ namespace zcom
     };
 
     // The base component class
-    class Base
+    class Component
     {
     public:
         // Releases the resource and removes the reference
@@ -220,41 +220,41 @@ namespace zcom
 
     protected:
         // Pre default handling
-        Event<void, Base*, int, int> _onMouseMove;
-        Event<void, Base*> _onMouseEnter;
-        Event<void, Base*> _onMouseEnterArea;
-        Event<void, Base*> _onMouseLeave;
-        Event<void, Base*> _onMouseLeaveArea;
-        Event<void, Base*, int, int> _onLeftPressed;
-        Event<void, Base*, int, int> _onRightPressed;
-        Event<void, Base*, int, int> _onLeftReleased;
-        Event<void, Base*, int, int> _onRightReleased;
-        Event<void, Base*, int, int> _onWheelUp;
-        Event<void, Base*, int, int> _onWheelDown;
-        Event<void, Base*, bool> _onSelected;
-        Event<void, Base*> _onDeselected;
+        Event<void, Component*, int, int> _onMouseMove;
+        Event<void, Component*> _onMouseEnter;
+        Event<void, Component*> _onMouseEnterArea;
+        Event<void, Component*> _onMouseLeave;
+        Event<void, Component*> _onMouseLeaveArea;
+        Event<void, Component*, int, int> _onLeftPressed;
+        Event<void, Component*, int, int> _onRightPressed;
+        Event<void, Component*, int, int> _onLeftReleased;
+        Event<void, Component*, int, int> _onRightReleased;
+        Event<void, Component*, int, int> _onWheelUp;
+        Event<void, Component*, int, int> _onWheelDown;
+        Event<void, Component*, bool> _onSelected;
+        Event<void, Component*> _onDeselected;
         // Post default handling
-        Event<void, Base*, std::vector<EventTargets::Params>, int, int> _postMouseMove;
-        Event<void, Base*, std::vector<EventTargets::Params>, int, int> _postLeftPressed;
-        Event<void, Base*, std::vector<EventTargets::Params>, int, int> _postRightPressed;
-        Event<void, Base*, std::vector<EventTargets::Params>, int, int> _postLeftReleased;
-        Event<void, Base*, std::vector<EventTargets::Params>, int, int> _postRightReleased;
-        Event<void, Base*, std::vector<EventTargets::Params>, int, int> _postWheelUp;
-        Event<void, Base*, std::vector<EventTargets::Params>, int, int> _postWheelDown;
+        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postMouseMove;
+        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postLeftPressed;
+        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postRightPressed;
+        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postLeftReleased;
+        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postRightReleased;
+        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postWheelUp;
+        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postWheelDown;
 
         // Layout events
         Event<void> _onLayoutChanged;
 
     public:
-        Base(Scene* scene) : _scene(scene) {}
-        virtual ~Base()
+        Component(Scene* scene) : _scene(scene) {}
+        virtual ~Component()
         {
             SafeFullRelease((IUnknown**)&_canvas);
         }
-        Base(Base&&) = delete;
-        Base& operator=(Base&&) = delete;
-        Base(const Base&) = delete;
-        Base& operator=(const Base&) = delete;
+        Component(Component&&) = delete;
+        Component& operator=(Component&&) = delete;
+        Component(const Component&) = delete;
+        Component& operator=(const Component&) = delete;
 
         // Position description
         Alignment GetHorizontalAlignment() const { return _hPosAlign; }
@@ -850,84 +850,84 @@ namespace zcom
         int GetMousePosX() const { return _mousePosX; }
         int GetMousePosY() const { return _mousePosY; }
 
-        void AddOnMouseMove(std::function<void(Base*, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddOnMouseMove(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _onMouseMove.Add(handler, info);
         }
-        void AddOnMouseEnter(std::function<void(Base*)> handler, EventInfo info = { nullptr, "" })
+        void AddOnMouseEnter(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
         {
             _onMouseEnter.Add(handler, info);
         }
-        void AddOnMouseLeave(std::function<void(Base*)> handler, EventInfo info = { nullptr, "" })
+        void AddOnMouseLeave(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
         {
             _onMouseLeave.Add(handler, info);
         }
-        void AddOnMouseEnterArea(std::function<void(Base*)> handler, EventInfo info = { nullptr, "" })
+        void AddOnMouseEnterArea(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
         {
             _onMouseEnterArea.Add(handler, info);
         }
-        void AddOnMouseLeaveArea(std::function<void(Base*)> handler, EventInfo info = { nullptr, "" })
+        void AddOnMouseLeaveArea(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
         {
             _onMouseLeaveArea.Add(handler, info);
         }
-        void AddOnLeftPressed(std::function<void(Base*, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddOnLeftPressed(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _onLeftPressed.Add(handler, info);
         }
-        void AddOnRightPressed(std::function<void(Base*, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddOnRightPressed(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _onRightPressed.Add(handler, info);
         }
-        void AddOnLeftReleased(std::function<void(Base*, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddOnLeftReleased(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _onLeftReleased.Add(handler, info);
         }
-        void AddOnRightReleased(std::function<void(Base*, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddOnRightReleased(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _onRightReleased.Add(handler, info);
         }
-        void AddOnWheelUp(std::function<void(Base*, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddOnWheelUp(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _onWheelUp.Add(handler, info);
         }
-        void AddOnWheelDown(std::function<void(Base*, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddOnWheelDown(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _onWheelDown.Add(handler, info);
         }
-        void AddOnSelected(std::function<void(Base*, bool)> handler, EventInfo info = { nullptr, "" })
+        void AddOnSelected(std::function<void(Component*, bool)> handler, EventInfo info = { nullptr, "" })
         {
             _onSelected.Add(handler, info);
         }
-        void AddOnDeselected(std::function<void(Base*)> handler, EventInfo info = { nullptr, "" })
+        void AddOnDeselected(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
         {
             _onDeselected.Add(handler, info);
         }
 
-        void AddPostMouseMove(std::function<void(Base*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddPostMouseMove(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _postMouseMove.Add(handler, info);
         }
-        void AddPostLeftPressed(std::function<void(Base*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddPostLeftPressed(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _postLeftPressed.Add(handler, info);
         }
-        void AddPostRightPressed(std::function<void(Base*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddPostRightPressed(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _postRightPressed.Add(handler, info);
         }
-        void AddPostLeftReleased(std::function<void(Base*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddPostLeftReleased(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _postLeftReleased.Add(handler, info);
         }
-        void AddPostRightReleased(std::function<void(Base*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddPostRightReleased(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _postRightReleased.Add(handler, info);
         }
-        void AddPostWheelUp(std::function<void(Base*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddPostWheelUp(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _postWheelUp.Add(handler, info);
         }
-        void AddPostWheelDown(std::function<void(Base*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
+        void AddPostWheelDown(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _postWheelDown.Add(handler, info);
         }
@@ -1280,17 +1280,17 @@ namespace zcom
         }
 
         // Additional functions
-        virtual std::list<Base*> GetChildren()
+        virtual std::list<Component*> GetChildren()
         {
-            return std::list<Base*>();
+            return std::list<Component*>();
         }
 
-        virtual std::list<Base*> GetAllChildren()
+        virtual std::list<Component*> GetAllChildren()
         {
-            return std::list<Base*>();
+            return std::list<Component*>();
         }
 
-        virtual Base* IterateTab(bool reverse = false)
+        virtual Component* IterateTab(bool reverse = false)
         {
             if (!Selected())
                 return this;

@@ -23,7 +23,7 @@ namespace zcom
         PRESS_AND_RELEASE
     };
 
-    class Button : public Base, public KeyboardEventHandler
+    class Button : public Component, public KeyboardEventHandler
     {
 #pragma region base_class
     protected:
@@ -78,7 +78,7 @@ namespace zcom
 
             // Draw button image
             if (image && image->GetImage())
-                g.target->DrawBitmap(image->Base::Image());
+                g.target->DrawBitmap(image->Component::Image());
 
             // Draw button text
             g.target->DrawBitmap(
@@ -186,8 +186,8 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
-        Button(Scene* scene) : Base(scene) {}
+        friend class Component;
+        Button(Scene* scene) : Component(scene) {}
         void Init(std::wstring text = L"")
         {
             SetDefaultCursor(CursorIcon::HAND);

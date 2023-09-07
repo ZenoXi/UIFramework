@@ -35,7 +35,7 @@ namespace zcom
         BOTTOM_RIGHT,
     };
 
-    class Image : public Base
+    class Image : public Component
     {
     public:
         void SetImage(ID2D1Bitmap* image)
@@ -205,8 +205,8 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
-        Image(Scene* scene) : Base(scene) {}
+        friend class Component;
+        Image(Scene* scene) : Component(scene) {}
         void Init(ID2D1Bitmap* image = nullptr)
         {
             _image = image;

@@ -42,12 +42,12 @@ namespace zcom
         Canvas(const Canvas&) = delete;
         Canvas& operator=(const Canvas&) = delete;
 
-        void AddComponent(Base* comp)
+        void AddComponent(Component* comp)
         {
             _panel->AddItem(comp);
         }
 
-        void RemoveComponent(Base* comp)
+        void RemoveComponent(Component* comp)
         {
             _panel->RemoveItem(comp);
         }
@@ -62,7 +62,7 @@ namespace zcom
             return _panel->ItemCount();
         }
 
-        Base* GetComponent(int index)
+        Component* GetComponent(int index)
         {
             return _panel->GetItem(index);
         }
@@ -122,7 +122,7 @@ namespace zcom
             return _panel->GetBackgroundColor();
         }
 
-        void ClearSelection(Base* exception = nullptr)
+        void ClearSelection(Component* exception = nullptr)
         {
             auto allComponents = GetAllItems();
             for (auto& component : allComponents)
@@ -137,7 +137,7 @@ namespace zcom
             }
         }
 
-        Base* GetSelectedComponent()
+        Component* GetSelectedComponent()
         {
             auto allComponents = GetAllItems();
             for (auto& component : allComponents)
@@ -153,7 +153,7 @@ namespace zcom
 
         // Recursively gets all components in the canvas
         // *Might* (unlikely) cause performance issues if used often
-        std::list<Base*> GetAllItems()
+        std::list<Component*> GetAllItems()
         {
             return _panel->GetAllChildren();
         }
@@ -168,7 +168,7 @@ namespace zcom
         int MousePosX() { return _mousePosX; }
         int MousePosY() { return _mousePosY; }
 
-        Base* OnMouseMove(int x, int y)
+        Component* OnMouseMove(int x, int y)
         {
             _mousePosX = x;
             _mousePosY = y;
@@ -207,7 +207,7 @@ namespace zcom
             _panel->OnMouseEnter();
         }
 
-        Base* OnLeftPressed(int x, int y)
+        Component* OnLeftPressed(int x, int y)
         {
             _mouseLeftClicked = true;
 
@@ -247,7 +247,7 @@ namespace zcom
             //return handled;
         }
 
-        Base* OnLeftReleased(int x, int y)
+        Component* OnLeftReleased(int x, int y)
         {
             _mouseLeftClicked = false;
 
@@ -265,7 +265,7 @@ namespace zcom
             return targets.MainTarget();
         }
 
-        Base* OnRightPressed(int x, int y)
+        Component* OnRightPressed(int x, int y)
         {
             _mouseRightClicked = true;
 
@@ -283,7 +283,7 @@ namespace zcom
             return targets.MainTarget();
         }
 
-        Base* OnRightReleased(int x, int y)
+        Component* OnRightReleased(int x, int y)
         {
             _mouseRightClicked = false;
 
@@ -301,7 +301,7 @@ namespace zcom
             return targets.MainTarget();
         }
 
-        Base* OnWheelUp(int x, int y)
+        Component* OnWheelUp(int x, int y)
         {
             auto targets = _panel->OnWheelUp(x, y);
             targets.Remove(_panel.get());
@@ -317,7 +317,7 @@ namespace zcom
             return targets.MainTarget();
         }
 
-        Base* OnWheelDown(int x, int y)
+        Component* OnWheelDown(int x, int y)
         {
             auto targets = _panel->OnWheelDown(x, y);
             targets.Remove(_panel.get());
@@ -347,7 +347,7 @@ namespace zcom
             if (vkCode == VK_TAB)
             {
                 // Advance selected element
-                Base* item = _panel->IterateTab(KeyState(VK_SHIFT));
+                Component* item = _panel->IterateTab(KeyState(VK_SHIFT));
                 ClearSelection();
                 if (item != nullptr)
                 {

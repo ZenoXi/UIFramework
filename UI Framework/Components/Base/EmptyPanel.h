@@ -5,7 +5,7 @@
 namespace zcom
 {
     // Completely barebones component, only contains base component functionality
-    class EmptyPanel : public Base
+    class EmptyPanel : public Component
     {
 #pragma region base_class
     protected:
@@ -20,8 +20,8 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
-        EmptyPanel(Scene* scene) : Base(scene) {}
+        friend class Component;
+        EmptyPanel(Scene* scene) : Component(scene) {}
         void Init() {}
     public:
         ~EmptyPanel() {}

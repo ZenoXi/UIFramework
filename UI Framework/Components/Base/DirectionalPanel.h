@@ -38,7 +38,7 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
+        friend class Component;
         DirectionalPanel(Scene* scene) : Panel(scene) {}
         void Init(PanelDirection direction)
         {

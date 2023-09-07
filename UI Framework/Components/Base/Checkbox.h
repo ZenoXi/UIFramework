@@ -7,7 +7,7 @@
 
 namespace zcom
 {
-    class Checkbox : public Base, public KeyboardEventHandler
+    class Checkbox : public Component, public KeyboardEventHandler
     {
     public:
         bool Checked() const { return _checked; }
@@ -17,8 +17,8 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
-        Checkbox(Scene* scene) : Base(scene) {}
+        friend class Component;
+        Checkbox(Scene* scene) : Component(scene) {}
         void Init(bool checked = false);
     public:
         ~Checkbox() {}

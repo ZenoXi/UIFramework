@@ -7,7 +7,7 @@ void zcom::DirectionalPanel::_RecalculateLayout(int width, int height)
     int offset = 0;
     for (auto& _item : _items)
     {
-        Base* item = _item.item;
+        Component* item = _item.item;
         // Position items
         if (_direction == PanelDirection::DOWN)
         {

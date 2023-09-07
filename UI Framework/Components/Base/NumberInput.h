@@ -101,7 +101,7 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
+        friend class Component;
         NumberInput(Scene* scene) : TextInput(scene) {}
         void Init()
         {

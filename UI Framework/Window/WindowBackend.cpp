@@ -325,7 +325,7 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         std::lock_guard<std::mutex> lock(_m_hittest);
 
         // Translate client coordinates to window coordinates
-        POINT pt = { (short)LOWORD(lParam), (short)HIWORD(lParam) };
+        POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
         ScreenToClient(hWnd, &pt);
 
         //std::cout << pt.x << ':' << pt.y << '\n';
@@ -675,12 +675,13 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         {
             std::cout << pos->cx << ":" << pos->cy << '\n';
             // Wait for window sizing to become available
-            std::lock_guard lock(_m_windowSize);
+            _m_windowSize.lock();
+            //std::lock_guard lock(_m_windowSize);
             //_m_windowSize.lock();
             //_m_windowSize.unlock();
 
             // Lock the message size variables from being read
-            _m_messageSize.lock();
+            //_m_messageSize.lock();
         }
         return DefWindowProc(hWnd, msg, wParam, lParam);
         break;
@@ -725,7 +726,10 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
             _last2Moves[1] = _last2Moves[0];
         }
 
-        _m_messageSize.unlock();
+        gfx.ResizeBuffers(w, h, false);
+
+        _m_windowSize.unlock();
+        //_m_messageSize.unlock();
 
         WindowSizeMessage message;
         message.width = w;

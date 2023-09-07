@@ -43,7 +43,7 @@ namespace zcom
         EventTargets _OnMouseMove(int deltaX, int deltaY)
         {
             auto targets = Panel::_OnMouseMove(deltaX, deltaY);
-            Base* mainTarget = targets.MainTarget();
+            Component* mainTarget = targets.MainTarget();
             auto it = std::find_if(_items.begin(), _items.end(), [mainTarget](Item& item) { return item.item == mainTarget; });
             if (it != _items.end())
             {
@@ -101,7 +101,7 @@ namespace zcom
         EventTargets _OnLeftPressed(int x, int y)
         {
             auto targets = Panel::_OnLeftPressed(x, y);
-            Base* mainTarget = targets.MainTarget();
+            Component* mainTarget = targets.MainTarget();
             auto it = std::find_if(_items.begin(), _items.end(), [mainTarget](Item& item) { return item.item == mainTarget; });
             if (it != _items.end())
             {
@@ -184,7 +184,7 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
+        friend class Component;
         MenuPanel(Scene* scene) : Panel(scene) {}
         void Init()
         {

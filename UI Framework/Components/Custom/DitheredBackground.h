@@ -7,7 +7,7 @@
 namespace zcom
 {
     // Completely barebones component, only contains base component functionality
-    class DitheredBackground : public Base
+    class DitheredBackground : public Component
     {
 #pragma region base_class
     protected:
@@ -99,8 +99,8 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
-        DitheredBackground(Scene* scene) : Base(scene) {}
+        friend class Component;
+        DitheredBackground(Scene* scene) : Component(scene) {}
         void Init() {}
     public:
         ~DitheredBackground() {}

@@ -267,9 +267,9 @@ namespace zcom
         void _OnDeselected(); // Uses 'App'
 
         // Override 'Panel' tab handling
-        Base* IterateTab(bool reverse)
+        Component* IterateTab(bool reverse)
         {
-            return Base::IterateTab(reverse);
+            return Component::IterateTab(reverse);
         }
 
         bool _OnHotkey(int id)
@@ -1021,7 +1021,7 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
+        friend class Component;
         TextInput(Scene* scene) : Panel(scene) {}
         void Init()
         {

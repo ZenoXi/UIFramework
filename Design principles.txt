@@ -14,9 +14,42 @@ FRAMERATE/TICKRATE:
  - The update function is called after every swap chain swap
  - If the window content is not redrawn after an update-draw cycle, the UI thread sleeps for a small amount which, due to thread scheduling, results in a random update function call interval
 
+
+
+
 LAYERED WINDOW SIZE/REDRAW SYNCHRONIZATION:
  - When calling UpdateLayeredWindowIndirect, the DC and window must be the exact same size
  - Since UpdateLayeredWindowIndirect is called in the UI thread and window size is updated in the Message thread, unexpected bugs can arise
+
+ - Simple implementation:
+  UI thread:
+   - Lock back buffer size
+   - Render
+   - Unlock back buffer size
+  Message thread:
+   - OS resizes the window
+   - Receive WM_SIZE message
+   - Lock back buffer
+   - Resize back buffer
+   - Unlock back buffer
+
+ - This works for non-layered windows, as their content is updated by the OS after presenting the back buffer and size mismatch just results in some stretching
+ - For layered windows the window content must be updated manually using UpdateLWI which requires window size and back buffer size to match exactly
+ - For this we must be able to control when the OS performs window resizing, which can be done by handling the WM_WINDOWPOSCHANGING message which is sent right before resizing the window
+ 
+ - Advanced implementation:
+  UI thread:
+   - Lock back buffer size
+   - Render
+   - Unlock back buffer size
+  Message thread:
+   - Receive WM_WINDOWPOSCHANGING message
+   - Lock back buffer
+   - OS resizes the window
+   - Receive WM_SIZE message
+   - Resize back buffer
+   - Unlock back buffer
+  
 
 UI thread:
  - Lock window size

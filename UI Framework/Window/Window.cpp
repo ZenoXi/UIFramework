@@ -89,12 +89,6 @@ int zwnd::Window::_GetSceneIndex(std::string name)
 
 void zwnd::Window::_HandleMessage(WindowMessage msg)
 {
-
-}
-
-/*
-void zwnd::Window::_HandleMessage(WindowMessage msg)
-{
     if (msg.id == MouseMoveMessage::ID())
     {
         MouseMoveMessage message;
@@ -115,6 +109,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
 
         // Group all scenes into one list, with top scenes at the start
         std::vector<SceneInfo> scenes;
+        scenes.reserve(2 + _activeScenes.size());
 
         SceneInfo titleBarSceneInfo;
         titleBarSceneInfo.scene = _titleBarScene.get();
@@ -124,10 +119,11 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
         titleBarSceneInfo.bottom = margins.top + _titleBarScene->TitleBarHeight();
         scenes.push_back(titleBarSceneInfo);
 
-        for (auto& scene : _activeScenes)
+        // Scenes are stored in the array in the order: bottom-most -> top-most
+        for (auto reverseit = _activeScenes.crbegin(); reverseit != _activeScenes.crend(); reverseit++)
         {
             SceneInfo sceneInfo;
-            sceneInfo.scene = scene.get();
+            sceneInfo.scene = reverseit->get();
             sceneInfo.left = margins.left;
             sceneInfo.top = margins.top;
             sceneInfo.right = _window->GetWidth() - margins.right;
@@ -141,30 +137,29 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
         nonClientAreaSceneInfo.top = 0;
         nonClientAreaSceneInfo.right = _window->GetWidth();
         nonClientAreaSceneInfo.bottom = _window->GetHeight();
-        scenes.push_back(titleBarSceneInfo);
+        scenes.push_back(nonClientAreaSceneInfo);
 
-        // Iterate all scenes until 
-
-        // Check if mouse move is inside client area
-        if (x >= margins.left && x < _window->GetWidth() - margins.right &&
-            y >= margins.top && y < _window->GetHeight() - margins.bottom)
+        // Iterate all scenes until the mouse move event is handled
+        for (auto& sceneInfo : scenes)
         {
-            int clientX = x - margins.left;
-            int clientY = y - margins.top;
-
-            // Check if mouse moved in the title bar
-            if (clientY < _titleBarScene->TitleBarHeight())
+            if (x >= sceneInfo.left && x < sceneInfo.right &&
+                y >= sceneInfo.top && y < sceneInfo.bottom)
             {
-                _titleBarScene->GetCanvas()->OnMouseMove();
-
+                int sceneSpaceX = x - sceneInfo.left;
+                int sceneSpaceY = y - sceneInfo.top;
+                zcom::Component* target = sceneInfo.scene->GetCanvas()->OnMouseMove(sceneSpaceX, sceneSpaceY);
+                if (target != nullptr)
+                    break;
             }
-            
         }
+    }
+    else if (msg.id == MouseEnterMessage::ID())
+    {
+        // At the moment scene mouse move handler deals with mouse entry
+    }
+    else if (msg.id == MouseLeaveMessage::ID())
+    {
 
-        if (!handled)
-        {
-            _nonClientAreaScene->GetCanvas()->OnMouseMove(x, y);
-        }
     }
 
     switch (msg.id)
@@ -302,7 +297,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     }
 }
-*/
+
 void zwnd::Window::_MessageThread()
 {
     // Create window
@@ -410,8 +405,8 @@ void zwnd::Window::_UIThread()
         if (windowSize.changed)
         {
             // Resize render target
-            if (_window->gfx.Initialized())
-                _window->gfx.ResizeBuffers(windowSize.width, windowSize.height, false);
+            //if (_window->gfx.Initialized())
+            //    _window->gfx.ResizeBuffers(windowSize.width, windowSize.height, false);
 
             RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
 

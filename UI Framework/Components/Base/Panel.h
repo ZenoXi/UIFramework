@@ -44,7 +44,7 @@ namespace zcom
         HORIZONTAL
     };
 
-    class Panel : public Base
+    class Panel : public Component
     {
     private:
         void _UpdateScrollbar(Scrollbar direction)
@@ -408,7 +408,7 @@ namespace zcom
                 return EventTargets().Add(this, GetMousePosX(), GetMousePosY());
             }
 
-            std::vector<Base*> hoveredComponents;
+            std::vector<Component*> hoveredComponents;
 
             // Adjust coordinates for scroll
             int adjX = GetMousePosX() + _horizontalScrollbar.scrollAmount;
@@ -419,7 +419,7 @@ namespace zcom
             EventTargets targets;
             for (auto& _item : _items)
             {
-                Base* item = _item.item;
+                Component* item = _item.item;
 
                 if (!item->GetVisible()) continue;
 
@@ -471,7 +471,7 @@ namespace zcom
 
             if (!hoveredComponents.empty())
             {
-                Base* topmost = hoveredComponents[0];
+                Component* topmost = hoveredComponents[0];
                 for (int i = 1; i < hoveredComponents.size(); i++)
                 {
                     if (hoveredComponents[i]->GetZIndex() > topmost->GetZIndex())
@@ -584,7 +584,7 @@ namespace zcom
 
             for (auto& _item : _items)
             {
-                Base* item = _item.item;
+                Component* item = _item.item;
                 if (!item->GetVisible())
                     continue;
                 if (item->GetMouseInside())
@@ -616,10 +616,10 @@ namespace zcom
             // of special cases of drag-clicking outside of the visual item area.
 
             // Get all hovered items
-            std::vector<Base*> hoveredComponents;
+            std::vector<Component*> hoveredComponents;
             for (auto& _item : _items)
             {
-                Base* item = _item.item;
+                Component* item = _item.item;
 
                 if (!item->GetVisible())
                     continue;
@@ -634,7 +634,7 @@ namespace zcom
             if (!hoveredComponents.empty())
             {
                 // Find item with highest z-index
-                Base* topmost = hoveredComponents[0];
+                Component* topmost = hoveredComponents[0];
                 for (int i = 1; i < hoveredComponents.size(); i++)
                     if (hoveredComponents[i]->GetZIndex() > topmost->GetZIndex())
                         topmost = hoveredComponents[i];
@@ -689,7 +689,7 @@ namespace zcom
 
             for (auto& _item : _items)
             {
-                Base* item = _item.item;
+                Component* item = _item.item;
                 if (!item->GetVisible())
                     continue;
                 if (item->GetMouseInside())
@@ -706,10 +706,10 @@ namespace zcom
             // ** In depth explanation in '_OnLeftPressed' **
 
             // Get all hovered items
-            std::vector<Base*> hoveredComponents;
+            std::vector<Component*> hoveredComponents;
             for (auto& _item : _items)
             {
-                Base* item = _item.item;
+                Component* item = _item.item;
 
                 if (!item->GetVisible())
                     continue;
@@ -724,7 +724,7 @@ namespace zcom
             if (!hoveredComponents.empty())
             {
                 // Find item with highest z-index
-                Base* topmost = hoveredComponents[0];
+                Component* topmost = hoveredComponents[0];
                 for (int i = 1; i < hoveredComponents.size(); i++)
                     if (hoveredComponents[i]->GetZIndex() > topmost->GetZIndex())
                         topmost = hoveredComponents[i];
@@ -859,9 +859,9 @@ namespace zcom
         }
 
     public:
-        std::list<Base*> GetChildren()
+        std::list<Component*> GetChildren()
         {
-            std::list<Base*> children;
+            std::list<Component*> children;
             for (auto& item : _items)
             {
                 children.push_back(item.item);
@@ -869,9 +869,9 @@ namespace zcom
             return children;
         }
 
-        std::list<Base*> GetAllChildren()
+        std::list<Component*> GetAllChildren()
         {
-            std::list<Base*> children;
+            std::list<Component*> children;
             for (auto& item : _items)
             {
                 children.push_back(item.item);
@@ -884,7 +884,7 @@ namespace zcom
             return children;
         }
 
-        Base* IterateTab(bool reverse)
+        Component* IterateTab(bool reverse)
         {
             if (_selectableItems.empty())
             {
@@ -907,7 +907,7 @@ namespace zcom
                 if (!_selectableItems[i]->GetVisible() || !_selectableItems[i]->GetActive())
                     continue;
 
-                Base* item = _selectableItems[i]->IterateTab(reverse);
+                Component* item = _selectableItems[i]->IterateTab(reverse);
                 if (item == nullptr)
                 {
                     if (!searching)
@@ -948,7 +948,7 @@ namespace zcom
             int maxBottomEdge = 0;
             for (auto& _item : _items)
             {
-                Base* item = _item.item;
+                Component* item = _item.item;
 
                 int newWidth = (int)std::round(widthWithPadding * item->GetParentWidthPercent()) + item->GetBaseWidth();
                 int newHeight = (int)std::round(heightWithPadding * item->GetParentHeightPercent()) + item->GetBaseHeight();
@@ -1019,7 +1019,7 @@ namespace zcom
         {
             for (auto& _item : _items)
             {
-                Base* item = _item.item;
+                Component* item = _item.item;
                 item->SetScreenPosition(
                     GetScreenX() + item->GetX() - _horizontalScrollbar.scrollAmount,
                     GetScreenY() + item->GetY() - _verticalScrollbar.scrollAmount
@@ -1029,13 +1029,13 @@ namespace zcom
 
         struct Item
         {
-            Base* item;
+            Component* item;
             bool owned;
             bool hasShadow;
         };
         std::vector<Item> _items;
     private:
-        std::vector<Base*> _selectableItems;
+        std::vector<Component*> _selectableItems;
 
         // Margins
         RECT _margins = { 0, 0, 0, 0 };
@@ -1084,8 +1084,8 @@ namespace zcom
 
     protected:
         friend class Scene;
-        friend class Base;
-        Panel(Scene* scene) : Base(scene) {}
+        friend class Component;
+        Panel(Scene* scene) : Component(scene) {}
         void Init()
         {
             // By default allow iterating nested components
@@ -1101,7 +1101,7 @@ namespace zcom
         Panel(const Panel&) = delete;
         Panel& operator=(const Panel&) = delete;
 
-        void AddItem(Base* item, bool transferOwnership = false)
+        void AddItem(Component* item, bool transferOwnership = false)
         {
             _items.push_back({ item, transferOwnership, false });
 
@@ -1119,7 +1119,7 @@ namespace zcom
             }, { this, "" });
 
             // Add selection handler for scrolling
-            item->AddOnSelected([&](zcom::Base* srcItem, bool reverse)
+            item->AddOnSelected([&](zcom::Component* srcItem, bool reverse)
             {
                 // Propagate up, to allow scrolling to nested items
                 _onSelected.InvokeAll(this, reverse);
@@ -1138,7 +1138,7 @@ namespace zcom
                 OnMouseMove(GetMousePosX(), GetMousePosY());
         }
 
-        void RemoveItem(Base* item)
+        void RemoveItem(Component* item)
         {
             for (int i = 0; i < _items.size(); i++)
             {
@@ -1186,7 +1186,7 @@ namespace zcom
             return _items.size();
         }
 
-        Base* GetItem(int index)
+        Component* GetItem(int index)
         {
             return _items[index].item;
         }
@@ -1248,7 +1248,7 @@ namespace zcom
             }
 
             // Sort indices
-            std::sort(_selectableItems.begin(), _selectableItems.end(), [](Base* a, Base* b) { return a->GetTabIndex() < b->GetTabIndex(); });
+            std::sort(_selectableItems.begin(), _selectableItems.end(), [](Component* a, Component* b) { return a->GetTabIndex() < b->GetTabIndex(); });
 
             // Remove duplicates
             //for (int i = 1; i < _selectableItems.size(); i++)
@@ -1573,7 +1573,7 @@ namespace zcom
 
         // Scrolls to the specified item.
         // If 'force' == true, scrolling is done even if item is already fully visible (currently unimplemented)
-        void ScrollToItem(zcom::Base* item, bool force = false)
+        void ScrollToItem(zcom::Component* item, bool force = false)
         {
             // TODO: add 'force' == true functionality
 

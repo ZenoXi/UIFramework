@@ -3,7 +3,7 @@
 #include "App.h"
 #include "Window/Window.h"
 
-void zcom::Base::SafeFullRelease(IUnknown** res)
+void zcom::Component::SafeFullRelease(IUnknown** res)
 {
     _scene->GetWindow()->Backend().Graphics()->ReleaseResource(res);
     //App::Instance()->window.gfx.ReleaseResource(res);
@@ -18,12 +18,12 @@ void zcom::SafeRelease(IUnknown** res)
     }
 }
 
-void zcom::Base::_ApplyCursor()
+void zcom::Component::_ApplyCursor()
 {
     _scene->GetApp()->window.SetCursorIcon(_cursor);
 }
 
-void zcom::Base::_ShowHoverText()
+void zcom::Component::_ShowHoverText()
 {
     if (_hoverText.empty())
         return;
