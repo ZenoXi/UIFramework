@@ -257,7 +257,7 @@ namespace zcom
                 trueY < margins.top || trueY > GetHeight() - margins.bottom)
                 SetDefaultCursor(targets.MainTarget()->GetDefaultCursor());
             else
-                SetDefaultCursor(CursorIcon::IBEAM);
+                SetDefaultCursor(zwnd::CursorIcon::IBEAM);
 
             return EventTargets().Add(this, GetMousePosX(), GetMousePosY());
         }
@@ -1028,7 +1028,7 @@ namespace zcom
             Panel::Init();
 
             _customInactiveDraw = true;
-            SetDefaultCursor(CursorIcon::IBEAM);
+            SetDefaultCursor(zwnd::CursorIcon::IBEAM);
             SetSelectable(true);
             SetBorderVisibility(true);
             SetBorderColor(D2D1::ColorF(0.3f, 0.3f, 0.3f));

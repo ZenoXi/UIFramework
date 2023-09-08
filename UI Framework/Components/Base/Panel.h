@@ -495,7 +495,10 @@ namespace zcom
                 return topmost->OnMouseMove(adjX - topmost->GetX(), adjY - topmost->GetY()).Add(this, GetMousePosX(), GetMousePosY());
             }
 
-            return std::move(targets.Add(this, GetMousePosX(), GetMousePosY()));
+            if (_fallthroughMouseEvents)
+                return targets;
+            else
+                return std::move(targets.Add(this, GetMousePosX(), GetMousePosY()));
 
             //for (auto& _item : _items)
             //{
@@ -1044,6 +1047,8 @@ namespace zcom
         bool _deferUpdates = false;
         bool _updatesDeferred = false;
 
+        bool _fallthroughMouseEvents = false;
+
         // Scrolling
         struct _ScrollAnimation
         {
@@ -1234,6 +1239,40 @@ namespace zcom
                     OnMouseMove(GetMousePosX(), GetMousePosY());
             }
             _updatesDeferred = false;
+        }
+
+        // When event fallthrough is enabled, the panel will not handle mouse events that don't hit any nested components
+        void EnableMouseEventFallthrough()
+        {
+            _fallthroughMouseEvents = true;
+
+            // If the mouse is currently holding the panel, and not a nested component,
+            // manually invoke mouse release, since the panel itself will be uninteractable
+            bool insideNestedComponent = false;
+            for (auto& item : _items)
+            {
+                if (item.item->GetMouseInside())
+                {
+                    insideNestedComponent = true;
+                    break;
+                }
+            }
+            if (!insideNestedComponent)
+            {
+                OnLeftReleased();
+                OnRightReleased();
+            }
+
+            // Invoke mouse move resending on parent component
+            _onLayoutChanged.InvokeAll();
+        }
+
+        void DisableMouseEventFallthrough()
+        {
+            _fallthroughMouseEvents = false;
+
+            // Invoke mouse move resending on parent component
+            _onLayoutChanged.InvokeAll();
         }
 
         void ReindexTabOrder()

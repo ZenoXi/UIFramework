@@ -72,6 +72,17 @@ namespace zcom
             _panel->ClearItems();
         }
 
+        Panel* BasePanel()
+        {
+            return _panel.get();
+        }
+
+        // true by default
+        void SetOcclusive(bool occlusive)
+        {
+            occlusive ? _panel->DisableMouseEventFallthrough() : _panel->EnableMouseEventFallthrough();
+        }
+
         void Update()
         {
             _panel->Update();

@@ -65,6 +65,7 @@ protected:
         return uptr;
     }
 
+public:
     std::unique_ptr<zcom::Panel> CreatePanel()
     {
         auto uptr = std::unique_ptr<zcom::Panel>(new zcom::Panel(this));

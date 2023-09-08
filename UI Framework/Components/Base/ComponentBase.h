@@ -8,6 +8,7 @@
 
 #include "Window/DisplayWindow.h"
 #include "Window/Graphics.h"
+#include "Window/CursorIcon.h"
 #include "Window/MouseEventHandler.h"
 #include "Helper/Event.h"
 #include "Helper/Time.h"
@@ -196,7 +197,7 @@ namespace zcom
         ID2D1Bitmap* _background = nullptr;
 
         // Cursor
-        CursorIcon _cursor = CursorIcon::ARROW;
+        zwnd::CursorIcon _cursor = zwnd::CursorIcon::ARROW;
 
         // Hover text
         std::wstring _hoverText = L"";
@@ -572,9 +573,9 @@ namespace zcom
         }
 
         // Cursor
-        CursorIcon GetDefaultCursor() const { return _cursor; }
+        zwnd::CursorIcon GetDefaultCursor() const { return _cursor; }
 
-        void SetDefaultCursor(CursorIcon cursor)
+        void SetDefaultCursor(zwnd::CursorIcon cursor)
         {
             _cursor = cursor;
         }

@@ -89,69 +89,26 @@ int zwnd::Window::_GetSceneIndex(std::string name)
 
 void zwnd::Window::_HandleMessage(WindowMessage msg)
 {
-    if (msg.id == MouseMoveMessage::ID())
+    if (msg.id == WindowSizeMessage::ID())
+    {
+
+    }
+    else if (msg.id == WindowMoveMessage::ID())
+    {
+
+    }
+    else if (msg.id == WindowCloseMessage::ID())
+    {
+        _closed = true;
+    }
+    else if (msg.id == MouseMoveMessage::ID())
     {
         MouseMoveMessage message;
         message.Decode(msg);
         int x = message.x;
         int y = message.y;
 
-        RECT margins = _nonClientAreaScene->GetClientAreaMargins();
-
-        struct SceneInfo
-        {
-            int left;
-            int right;
-            int top;
-            int bottom;
-            Scene* scene;
-        };
-
-        // Group all scenes into one list, with top scenes at the start
-        std::vector<SceneInfo> scenes;
-        scenes.reserve(2 + _activeScenes.size());
-
-        SceneInfo titleBarSceneInfo;
-        titleBarSceneInfo.scene = _titleBarScene.get();
-        titleBarSceneInfo.left = margins.left;
-        titleBarSceneInfo.top = margins.top;
-        titleBarSceneInfo.right = _window->GetWidth() - margins.right;
-        titleBarSceneInfo.bottom = margins.top + _titleBarScene->TitleBarHeight();
-        scenes.push_back(titleBarSceneInfo);
-
-        // Scenes are stored in the array in the order: bottom-most -> top-most
-        for (auto reverseit = _activeScenes.crbegin(); reverseit != _activeScenes.crend(); reverseit++)
-        {
-            SceneInfo sceneInfo;
-            sceneInfo.scene = reverseit->get();
-            sceneInfo.left = margins.left;
-            sceneInfo.top = margins.top;
-            sceneInfo.right = _window->GetWidth() - margins.right;
-            sceneInfo.bottom = _window->GetHeight() - margins.bottom;
-            scenes.push_back(sceneInfo);
-        }
-
-        SceneInfo nonClientAreaSceneInfo;
-        nonClientAreaSceneInfo.scene = _nonClientAreaScene.get();
-        nonClientAreaSceneInfo.left = 0;
-        nonClientAreaSceneInfo.top = 0;
-        nonClientAreaSceneInfo.right = _window->GetWidth();
-        nonClientAreaSceneInfo.bottom = _window->GetHeight();
-        scenes.push_back(nonClientAreaSceneInfo);
-
-        // Iterate all scenes until the mouse move event is handled
-        for (auto& sceneInfo : scenes)
-        {
-            if (x >= sceneInfo.left && x < sceneInfo.right &&
-                y >= sceneInfo.top && y < sceneInfo.bottom)
-            {
-                int sceneSpaceX = x - sceneInfo.left;
-                int sceneSpaceY = y - sceneInfo.top;
-                zcom::Component* target = sceneInfo.scene->GetCanvas()->OnMouseMove(sceneSpaceX, sceneSpaceY);
-                if (target != nullptr)
-                    break;
-            }
-        }
+        _BuildMasterPanel()->OnMouseMove(x, y);
     }
     else if (msg.id == MouseEnterMessage::ID())
     {
@@ -159,142 +116,82 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseLeaveMessage::ID())
     {
+        _titleBarScene->GetCanvas()->OnMouseLeave();
+        _nonClientAreaScene->GetCanvas()->OnMouseLeave();
+        for (auto& scene : _activeScenes)
+            scene->GetCanvas()->OnMouseLeave();
+    }
+    else if (msg.id == MouseLeftPressedMessage::ID())
+    {
+        MouseLeftPressedMessage message;
+        message.Decode(msg);
+        int x = message.x;
+        int y = message.y;
 
+        _BuildMasterPanel()->OnLeftPressed(x, y);
     }
+    else if (msg.id == MouseRightPressedMessage::ID())
+    {
+        MouseRightPressedMessage message;
+        message.Decode(msg);
+        int x = message.x;
+        int y = message.y;
 
-    switch (msg.id)
+        _BuildMasterPanel()->OnRightPressed(x, y);
+    }
+    else if (msg.id == MouseLeftReleasedMessage::ID())
     {
-    case WM_MOUSEMOVE:
-    {
-        int x = (short)LOWORD(msg.lParam);
-        int y = (short)HIWORD(msg.lParam);
+        MouseLeftReleasedMessage message;
+        message.Decode(msg);
+        int x = message.x;
+        int y = message.y;
 
-        if (!_mouseInside)
-        {
-            _mouseInside = true;
-            for (auto h : _mouseHandlers)
-                h->OnMouseEnter();
-        }
-        for (auto h : _mouseHandlers)
-            h->OnMouseMove(x, y);
+        _BuildMasterPanel()->OnLeftReleased(x, y);
+    }
+    else if (msg.id == MouseRightReleasedMessage::ID())
+    {
+        MouseRightReleasedMessage message;
+        message.Decode(msg);
+        int x = message.x;
+        int y = message.y;
 
-        //if (x >= 0 && x < GetWidth() && y >= 0 && y < GetHeight())
-        //{
-        //    if (!_mouseInWindow)
-        //    {
-        //        _mouseInWindow = true;
-        //        for (auto h : _mouseHandlers) h->OnMouseEnter();
-        //    }
-        //    for (auto h : _mouseHandlers) h->OnMouseMove(x, y);
-        //}
-        //else
-        //{
-        //    if (msg.wParam & (MK_LBUTTON | MK_RBUTTON))
-        //    {
-        //        for (auto h : _mouseHandlers) h->OnMouseMove(x, y);
-        //    }
-        //    else
-        //    {
-        //        _mouseInWindow = false;
-        //        for (auto h : _mouseHandlers)
-        //        {
-        //            h->OnLeftReleased(x, y);
-        //            h->OnRightReleased(x, y);
-        //            h->OnMouseLeave();
-        //        }
-        //    }
-        //}
-        break;
+        _BuildMasterPanel()->OnRightReleased(x, y);
     }
-    case WM_MOUSELEAVE:
+    else if (msg.id == MouseWheelUpMessage::ID())
     {
-        _mouseInside = false;
-        for (auto h : _mouseHandlers)
-            h->OnMouseLeave();
-        break;
+        MouseWheelUpMessage message;
+        message.Decode(msg);
+        int x = message.x;
+        int y = message.y;
+
+        _BuildMasterPanel()->OnWheelUp(x, y);
     }
-    case WM_LBUTTONDOWN:
+    else if (msg.id == MouseWheelDownMessage::ID())
     {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        for (auto h : _mouseHandlers)
-            h->OnLeftPressed(x, y);
-        break;
+        MouseWheelDownMessage message;
+        message.Decode(msg);
+        int x = message.x;
+        int y = message.y;
+
+        _BuildMasterPanel()->OnWheelDown(x, y);
     }
-    case WM_RBUTTONDOWN:
+    else if (msg.id == KeyDownMessage::ID())
     {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        for (auto h : _mouseHandlers)
-            h->OnRightPressed(x, y);
-        break;
+        KeyDownMessage message;
+        message.Decode(msg);
+        keyboardManager.OnKeyDown(message.keyCode);
     }
-    case WM_LBUTTONUP:
+    else if (msg.id == KeyUpMessage::ID())
     {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        for (auto h : _mouseHandlers)
-            h->OnLeftReleased(x, y);
-        break;
+        KeyUpMessage message;
+        message.Decode(msg);
+        keyboardManager.OnKeyUp(message.keyCode);
     }
-    case WM_RBUTTONUP:
+    else if (msg.id == CharMessage::ID())
     {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        for (auto h : _mouseHandlers)
-            h->OnRightReleased(x, y);
-        break;
-    }
-    case WM_MOUSEWHEEL:
-    {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        if (GET_WHEEL_DELTA_WPARAM(msg.wParam) > 0)
-        {
-            for (auto h : _mouseHandlers)
-                h->OnWheelUp(x, y);
-        }
-        else if (GET_WHEEL_DELTA_WPARAM(msg.wParam) < 0)
-        {
-            for (auto h : _mouseHandlers)
-                h->OnWheelDown(x, y);
-        }
-        break;
-    }
-    case WM_KEYDOWN:
-    {
-        for (auto& h : _keyboardHandlers)
-            h->OnKeyDown(msg.wParam);
-        break;
-    }
-    case WM_KEYUP:
-    {
-        for (auto& h : _keyboardHandlers)
-            h->OnKeyUp(msg.wParam);
-        break;
-    }
-    case WM_CHAR:
-    {
-        for (auto& h : _keyboardHandlers)
-            h->OnChar(msg.wParam);
-        break;
-    }
-    case WM_MOVE:
-    {
-        _moveResult.handled = false;
-        _moveResult.msg = WM_MOVE;
-        _moveResult.lParam = msg.lParam;
-        _moveResult.wParam = msg.wParam;
-        break;
-    }
-    case WM_SIZE:
-    {
-        _sizeResult.handled = false;
-        _sizeResult.msg = WM_SIZE;
-        _sizeResult.lParam = msg.lParam;
-        _sizeResult.wParam = msg.wParam;
-        break;
-    }
+        CharMessage message;
+        message.Decode(msg);
+        keyboardManager.OnChar(message.character);
     }
 }
 
@@ -475,7 +372,7 @@ void zwnd::Window::_UIThread()
         //_window->SetSize(_window->GetWidth() + 1, _window->GetHeight() + 1);
 
         //std::cout << "Updated " << ++framecounter << '\n';
-        //redraw = true;
+        redraw = true;
         if (redraw)
         {
             //std::cout << "Redrawn (" << framecounter++ << ")\n";
@@ -632,4 +529,37 @@ void zwnd::Window::_PassParamsToHitTest()
         rect.bottom += clientAreaMargins.top;
     }
     _window->SetExcludedCaptionRects(excludedRects);
+}
+
+std::unique_ptr<zcom::Panel> zwnd::Window::_BuildMasterPanel()
+{
+    RECT margins = _nonClientAreaScene->GetClientAreaMargins();
+
+    std::unique_ptr<zcom::Panel> masterPanel = _nonClientAreaScene->CreatePanel();
+    masterPanel->Resize(Width(), Height());
+    masterPanel->DeferLayoutUpdates();
+    {
+        zcom::Panel* panel = _nonClientAreaScene->GetCanvas()->BasePanel();
+        panel->SetX(0);
+        panel->SetY(0);
+        masterPanel->AddItem(panel);
+    }
+    for (auto& scene : _activeScenes)
+    {
+        zcom::Panel* panel = scene->GetCanvas()->BasePanel();
+        panel->SetX(margins.left);
+        panel->SetY(margins.top + _titleBarScene->TitleBarHeight());
+        masterPanel->AddItem(panel);
+    }
+    {
+        zcom::Panel* panel = _titleBarScene->GetCanvas()->BasePanel();
+        panel->SetX(margins.left);
+        panel->SetY(margins.top);
+        masterPanel->AddItem(panel);
+    }
+    for (int i = 0; i < masterPanel->ItemCount(); i++)
+        masterPanel->GetItem(i)->SetZIndex(i);
+    masterPanel->ResumeLayoutUpdates(false);
+
+    return masterPanel;
 }

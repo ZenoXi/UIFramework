@@ -190,7 +190,7 @@ namespace zcom
         Button(Scene* scene) : Component(scene) {}
         void Init(std::wstring text = L"")
         {
-            SetDefaultCursor(CursorIcon::HAND);
+            SetDefaultCursor(zwnd::CursorIcon::HAND);
             SetSelectable(true);
             _text = Create<Label>(text);
             _text->SetSize(GetWidth(), GetHeight());

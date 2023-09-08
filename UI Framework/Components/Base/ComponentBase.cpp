@@ -20,7 +20,7 @@ void zcom::SafeRelease(IUnknown** res)
 
 void zcom::Component::_ApplyCursor()
 {
-    _scene->GetApp()->window.SetCursorIcon(_cursor);
+    _scene->GetWindow()->Backend().SetCursorIcon(_cursor);
 }
 
 void zcom::Component::_ShowHoverText()

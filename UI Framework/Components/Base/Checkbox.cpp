@@ -31,7 +31,7 @@ void zcom::Checkbox::Init(bool checked)
     _checkColor = D2D1::ColorF(0.6f, 0.6f, 0.6f);
 
     _customInactiveDraw = true;
-    SetDefaultCursor(CursorIcon::HAND);
+    SetDefaultCursor(zwnd::CursorIcon::HAND);
     SetSelectable(true);
     SetCornerRounding(5.0f);
     SetBorderVisibility(true);

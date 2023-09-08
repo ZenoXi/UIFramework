@@ -206,6 +206,12 @@
     <ClInclude Include="Components\Custom\DitheredBackground.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Window\WindowMessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\CursorIcon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="TintEffect.cso" />

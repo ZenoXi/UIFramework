@@ -649,12 +649,12 @@ namespace zcom
             _textSelectable = selectable;
             if (_textSelectable)
             {
-                SetDefaultCursor(CursorIcon::IBEAM);
+                SetDefaultCursor(zwnd::CursorIcon::IBEAM);
                 SetSelectable(true);
             }
             else
             {
-                SetDefaultCursor(CursorIcon::ARROW);
+                SetDefaultCursor(zwnd::CursorIcon::ARROW);
                 SetSelectable(false);
                 _selecting = false;
                 _selectionStart = 0;

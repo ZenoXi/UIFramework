@@ -168,6 +168,8 @@ namespace zwnd
 
     private:
         void _PassParamsToHitTest();
+        // Returns a panel containing main panels from all scenes, in screen space
+        std::unique_ptr<zcom::Panel> _BuildMasterPanel();
     };
 
     // /////////////////// //
