@@ -96,9 +96,14 @@ ID2D1Bitmap* ResourceManagerOld::GetImage(std::string name)
 
 ResourceManager::~ResourceManager()
 {
-    // Release image resources
+    ReleaseResources();
+}
+
+void ResourceManager::ReleaseResources()
+{
     for (auto& image : _images)
         image.bitmap->Release();
+    _images.clear();
 }
 
 void ResourceManager::CoInit()

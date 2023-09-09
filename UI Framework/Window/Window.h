@@ -20,6 +20,7 @@ namespace zwnd
     {
     public: // Initialization
         Window(App* app, WindowProperties props, HINSTANCE hinst, std::function<void(zwnd::Window* window)> initFunction);
+        ~Window();
         // Initialize the specified title bar scene. Should be called in the window init function *once*
         template<class _Scene>
         void LoadTitleBarScene(SceneOptionsBase* opt);
@@ -110,6 +111,10 @@ namespace zwnd
         int Width() const { return _window->GetWidth(); }
         // Returns the full window height
         int Height() const { return _window->GetHeight(); }
+        // Close the window
+        void Close() { _closed = true; }
+        // Returns whether the window is closed
+        bool Closed() const { return _closed && !_window; }
 
     public: // Managers
         MouseManager mouseManager;
@@ -159,6 +164,8 @@ namespace zwnd
 
         // Pointer to the app object
         App* _app;
+
+        std::optional<WindowSizeMessage> _windowSizeMessage;
 
     private: // Threads
         void _MessageThread();

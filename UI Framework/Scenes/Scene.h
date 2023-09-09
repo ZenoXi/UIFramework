@@ -36,6 +36,7 @@ protected:
     App* _app;
     zwnd::Window* _window;
     zcom::Canvas* _canvas;
+    bool _initialized = false;
     bool _focused = false;
 
     Scene(App* app, zwnd::Window* window);

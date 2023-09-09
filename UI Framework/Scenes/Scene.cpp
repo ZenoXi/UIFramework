@@ -11,17 +11,13 @@ Scene::Scene(App* app, zwnd::Window* window)
 
 Scene::~Scene()
 {
-
 }
 
 void Scene::Init(const SceneOptionsBase* options)
 {
-    //_canvas = new zcom::Canvas(Create<zcom::Panel>(), _app->window.width, _app->window.height);
-    //_canvas = new zcom::Canvas(Create<zcom::Panel>(), _window->Backend()->width, _window->Backend()->height);
     _canvas = new zcom::Canvas(Create<zcom::Panel>(), 1, 1);
     _Init(options);
-    //_canvas->Resize(_app->window.width, _app->window.height);
-    //_canvas->Resize(_window->Backend()->width, _window->Backend()->height);
+    _initialized = true;
 }
 
 void Scene::Uninit()
@@ -30,25 +26,27 @@ void Scene::Uninit()
     _Uninit();
     delete _canvas;
     _canvas = nullptr;
+    _initialized = false;
 }
 
 void Scene::Focus()
 {
     _focused = true;
-    //App::Instance()->mouseManager.AddHandler(_canvas);
-    App::Instance()->keyboardManager.AddHandler(_canvas);
+    _window->keyboardManager.AddHandler(_canvas);
     _Focus();
 }
 
 void Scene::Unfocus()
 {
+    if (!_focused)
+        return;
+
     _focused = false;
     _canvas->ClearSelection();
     _canvas->OnLeftReleased(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
     _canvas->OnRightReleased(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
     _canvas->OnMouseLeave();
-    //App::Instance()->mouseManager.RemoveHandler(_canvas);
-    App::Instance()->keyboardManager.RemoveHandler(_canvas);
+    _window->keyboardManager.RemoveHandler(_canvas);
     _Unfocus();
 }
 

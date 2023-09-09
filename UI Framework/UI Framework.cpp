@@ -100,6 +100,8 @@ int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
     // Main window loop
     while (true)
     {
+        if (wnd1.Closed())
+            break;
         //// Check for app exit
         //if (App::Exited())
         //    break;

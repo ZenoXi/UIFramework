@@ -40,61 +40,6 @@ void zwnd::WindowGraphics::Initialize(HWND* hwnd)
     HR(p_DXGIDevice->GetAdapter(p_DXGIAdapter.GetAddressOf()));
     HR(p_DXGIAdapter->GetParent(__uuidof(p_DXGIFactory), reinterpret_cast<void**>(p_DXGIFactory.GetAddressOf())));
 
-    // /////////// //
-    // D3D TEXTURE //
-    // /////////// //
-
-    //// Create a DXGI surface
-    //D3D11_TEXTURE2D_DESC description = {};
-    //description.ArraySize = 1;
-    //description.BindFlags = D3D11_BIND_RENDER_TARGET;
-    //description.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    //description.Width = _windowRect.right - _windowRect.left;
-    //description.Height = _windowRect.bottom - _windowRect.top;
-    //description.MipLevels = 1;
-    //description.SampleDesc.Count = 1;
-    //description.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
-    //HR(p_D3DDevice->CreateTexture2D(
-    //    &description,
-    //    0, // no initial data
-    //    &p_Texture
-    //));
-    //HR(p_Texture->QueryInterface(p_Surface.GetAddressOf()));
-
-    //// Create device context
-    //const D2D1_PIXEL_FORMAT format = D2D1::PixelFormat(
-    //    DXGI_FORMAT_B8G8R8A8_UNORM,
-    //    D2D1_ALPHA_MODE_PREMULTIPLIED
-    //);
-    //const D2D1_RENDER_TARGET_PROPERTIES properties = D2D1::RenderTargetProperties(
-    //    D2D1_RENDER_TARGET_TYPE_DEFAULT,
-    //    format,
-    //    0.0f, // default dpi
-    //    0.0f, // default dpi
-    //    D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE
-    //);
-    //HR(p_D2DFactory->CreateDxgiSurfaceRenderTarget(p_Surface.Get(), properties, p_RTarget.GetAddressOf()));
-    //HR(p_RTarget->QueryInterface(__uuidof(ID2D1DeviceContext), reinterpret_cast<void**>(p_Target.GetAddressOf())));
-
-    //// Create device context
-    //HR(p_D2DFactory->CreateDevice(p_DXGIDevice.Get(), p_D2DDevice.GetAddressOf()));
-    //HR(p_D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, p_Target.GetAddressOf()));
-
-    //// Create D2D bitmap from DXGI surface to render to
-    //auto props = D2D1::BitmapProperties1(
-    //    D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW | D2D1_BITMAP_OPTIONS_GDI_COMPATIBLE,
-    //    D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
-    //);
-    //HR(p_Target->CreateBitmapFromDxgiSurface(p_Surface.Get(),
-    //    props,
-    //    p_Bitmap.GetAddressOf()
-    //));
-    //p_Target->SetTarget(p_Bitmap.Get());
-
-    // ////////// //
-    // SWAP CHAIN //
-    // ////////// //
-
     // Set up swap chain
     DXGI_SWAP_CHAIN_DESC1 scd;
     ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC1));
@@ -136,8 +81,6 @@ void zwnd::WindowGraphics::Initialize(HWND* hwnd)
 
 void zwnd::WindowGraphics::Close()
 {
-    //p_SwapChain->SetFullscreenState(FALSE, NULL);
-
     // Release all references
     for (int i = 0; i < _references.size(); i++)
     {
@@ -152,7 +95,6 @@ void zwnd::WindowGraphics::Close()
     // Release all objects
     p_Bitmap.Reset();
     p_Surface.Reset();
-    //p_Texture.Reset();
     p_Target.Reset();
     p_D2DDevice.Reset();
     p_SwapChain.Reset();
@@ -169,12 +111,9 @@ void zwnd::WindowGraphics::BeginFrame()
 
 void zwnd::WindowGraphics::EndFrame(bool swap)
 {
-    //p_SwapChain->Present(1, 0);
-    //return;
     if (swap)
         p_SwapChain->Present(1, 0);
     else
-        //p_SwapChain->Present(1, DXGI_PRESENT_TEST);
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 

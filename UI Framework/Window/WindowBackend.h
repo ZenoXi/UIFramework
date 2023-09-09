@@ -128,15 +128,11 @@ namespace zwnd
         void LockSize();
         // Resumes processing of WM_WINDOWPOSCHANGING messages
         void UnlockSize();
-        // Returns window size received from the last WM_SIZE message.
-        MessageWindowSize GetMessageWindowSize();
+
         void UpdateLayeredWindow();
 
         bool ProcessMessages();
         void ProcessQueueMessages(std::function<void(WindowMessage)> callback);
-        WindowMessage GetSizeResult();
-        WindowMessage GetMoveResult();
-        WindowMessage GetExitResult();
 
         void AddMouseHandler(MouseEventHandler* handler);
         bool RemoveMouseHandler(MouseEventHandler* handler);
@@ -187,7 +183,6 @@ namespace zwnd
         static LRESULT WINAPI _HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
         static LRESULT WINAPI _HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
         LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-        void HandleMsgFromQueue(WindowMessage msg);
 
         std::mutex _m_msg;
         WindowMessage _sizeResult;
@@ -199,8 +194,6 @@ namespace zwnd
         int _messageWidth;
         // Window height, updated only in the WM_SIZE messages
         int _messageHeight;
-        bool _messageSizeChanged;
-        std::mutex _m_messageSize;
         std::mutex _m_windowSize;
 
         bool _fullscreen = false;

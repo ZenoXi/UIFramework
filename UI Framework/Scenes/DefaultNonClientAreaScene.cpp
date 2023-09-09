@@ -43,6 +43,7 @@ void DefaultNonClientAreaScene::_Init(const SceneOptionsBase* options)
 void DefaultNonClientAreaScene::_Uninit()
 {
     _canvas->ClearComponents();
+    GetWindow()->Backend().Graphics()->ReleaseResource((IUnknown**)&_ccanvas);
 }
 
 void DefaultNonClientAreaScene::_Focus()

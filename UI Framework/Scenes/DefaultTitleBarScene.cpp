@@ -51,6 +51,10 @@ void DefaultTitleBarScene::AddCloseButton()
     _closeButton->ButtonImage()->SetTintColor(D2D1::ColorF(0));
     _closeButton->ButtonHoverImage()->SetTintColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
     _closeButton->ButtonClickImage()->SetTintColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
+    _closeButton->SetActivation(zcom::ButtonActivation::RELEASE);
+    _closeButton->SetOnActivated([&]() {
+        _window->Close();
+    });
 
     _canvas->AddComponent(_closeButton.get());
 }

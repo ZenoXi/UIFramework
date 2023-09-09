@@ -694,8 +694,10 @@ namespace zcom
         }
         void OnMouseEnter()
         {
-            if (!_active) return;
-            if (_mouseInside) return;
+            if (!_active)
+                return;
+            if (_mouseInside)
+                return;
 
             _mouseInside = true;
             _onMouseEnter.InvokeAll(this);
@@ -703,8 +705,10 @@ namespace zcom
         }
         void OnMouseLeave()
         {
-            if (!_active) return;
-            if (!_mouseInside) return;
+            if (!_active)
+                return;
+            if (!_mouseInside)
+                return;
 
             _mouseInside = false;
             _onMouseLeave.InvokeAll(this);
@@ -713,8 +717,10 @@ namespace zcom
         }
         void OnMouseEnterArea()
         {
-            if (!_active) return;
-            if (_mouseInsideArea) return;
+            if (!_active)
+                return;
+            if (_mouseInsideArea)
+                return;
 
             _mouseInsideArea = true;
             _onMouseEnterArea.InvokeAll(this);
@@ -722,8 +728,10 @@ namespace zcom
         }
         void OnMouseLeaveArea()
         {
-            if (!_active) return;
-            if (!_mouseInsideArea) return;
+            if (!_active)
+                return;
+            if (!_mouseInsideArea)
+                return;
 
             _mouseInsideArea = false;
             _onMouseLeaveArea.InvokeAll(this);
@@ -731,8 +739,8 @@ namespace zcom
         }
         EventTargets OnLeftPressed(int x, int y)
         {
-            if (!_active) return EventTargets();
-            if (_mouseLeftClicked) return EventTargets();
+            if (!_active)
+                return EventTargets();
 
             // Correct mouse position if it doesn't match click position
             if (_mousePosX != x || _mousePosY != y)
@@ -746,8 +754,8 @@ namespace zcom
         }
         EventTargets OnLeftReleased(int x = std::numeric_limits<int>::min(), int y = std::numeric_limits<int>::min())
         {
-            if (!_active) return EventTargets();
-            if (!_mouseLeftClicked) return EventTargets();
+            if (!_active)
+                return EventTargets();
 
             // Correct mouse position if it doesn't match release position
             if (x != std::numeric_limits<int>::min() && y != std::numeric_limits<int>::min())
@@ -762,8 +770,8 @@ namespace zcom
         }
         EventTargets OnRightPressed(int x, int y)
         {
-            if (!_active) return EventTargets();
-            if (_mouseRightClicked) return EventTargets();
+            if (!_active)
+                return EventTargets();
 
             // Correct mouse position if it doesn't match click position
             if (_mousePosX != x || _mousePosY != y)
@@ -777,8 +785,8 @@ namespace zcom
         }
         EventTargets OnRightReleased(int x = std::numeric_limits<int>::min(), int y = std::numeric_limits<int>::min())
         {
-            if (!_active) return EventTargets();
-            if (!_mouseRightClicked) return EventTargets();
+            if (!_active)
+                return EventTargets();
 
             // Correct mouse position if it doesn't match release position
             if (x != std::numeric_limits<int>::min() && y != std::numeric_limits<int>::min())
@@ -793,7 +801,8 @@ namespace zcom
         }
         EventTargets OnWheelUp(int x, int y)
         {
-            if (!_active) return EventTargets();
+            if (!_active)
+                return EventTargets();
 
             _onWheelUp.InvokeAll(this, x, y);
             auto targets = _OnWheelUp(x, y);
@@ -802,7 +811,8 @@ namespace zcom
         }
         EventTargets OnWheelDown(int x, int y)
         {
-            if (!_active) return EventTargets();
+            if (!_active)
+                return EventTargets();
 
             _onWheelDown.InvokeAll(this, x, y);
             auto targets = _OnWheelDown(x, y);
@@ -811,8 +821,10 @@ namespace zcom
         }
         void OnSelected(bool reverse = false)
         {
-            if (!_active) return;
-            if (_selected) return;
+            if (!_active)
+                return;
+            if (_selected)
+                return;
 
             _selected = true;
             _redraw = true;
@@ -821,8 +833,10 @@ namespace zcom
         }
         void OnDeselected()
         {
-            if (!_active) return;
-            if (!_selected) return;
+            if (!_active)
+                return;
+            if (!_selected)
+                return;
 
             _selected = false;
             _redraw = true;

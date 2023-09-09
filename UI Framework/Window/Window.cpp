@@ -20,6 +20,12 @@ zwnd::Window::Window(App* app, WindowProperties props, HINSTANCE hinst, std::fun
     _scenesInited = true;
 }
 
+zwnd::Window::~Window()
+{
+    _closed = true;
+    _messageThread.join();
+}
+
 void zwnd::Window::Fullscreen(bool fullscreen)
 {
     if (fullscreen == _fullscreen)
@@ -91,7 +97,9 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
 {
     if (msg.id == WindowSizeMessage::ID())
     {
-
+        WindowSizeMessage message;
+        message.Decode(msg);
+        _windowSizeMessage = message;
     }
     else if (msg.id == WindowMoveMessage::ID())
     {
@@ -247,6 +255,12 @@ void zwnd::Window::_MessageThread()
         }
         continue;
     }
+    _uiThread.join();
+
+    resourceManager.ReleaseResources();
+    resourceManager.CoUninit();
+
+    _window.reset();
 }
 
 void zwnd::Window::_UIThread()
@@ -257,40 +271,26 @@ void zwnd::Window::_UIThread()
     // Create frame number debug text rendering resources
     IDWriteFactory* dwriteFactory = nullptr;
     IDWriteTextFormat* dwriteTextFormat = nullptr;
-    IDWriteTextLayout* dwriteTextLayout = nullptr;
-    //DWriteCreateFactory(
-    //    DWRITE_FACTORY_TYPE_SHARED,
-    //    __uuidof(IDWriteFactory),
-    //    reinterpret_cast<IUnknown**>(&dwriteFactory)
-    //);
-    //dwriteFactory->CreateTextFormat(
-    //    L"Calibri",
-    //    NULL,
-    //    DWRITE_FONT_WEIGHT_BOLD,
-    //    DWRITE_FONT_STYLE_NORMAL,
-    //    DWRITE_FONT_STRETCH_NORMAL,
-    //    20.0f,
-    //    L"en-us",
-    //    &dwriteTextFormat
-    //);
+    DWriteCreateFactory(
+        DWRITE_FACTORY_TYPE_SHARED,
+        __uuidof(IDWriteFactory),
+        reinterpret_cast<IUnknown**>(&dwriteFactory)
+    );
+    dwriteFactory->CreateTextFormat(
+        L"Calibri",
+        NULL,
+        DWRITE_FONT_WEIGHT_BOLD,
+        DWRITE_FONT_STYLE_NORMAL,
+        DWRITE_FONT_STRETCH_NORMAL,
+        20.0f,
+        L"en-us",
+        &dwriteTextFormat
+    );
 
     while (true)
     {
+        _windowSizeMessage = std::nullopt;
         _window->ProcessQueueMessages([&](WindowMessage msg) { Window::_HandleMessage(msg); });
-        WindowMessage wmMove = _window->GetMoveResult();
-        WindowMessage wmSize = _window->GetSizeResult();
-        WindowMessage wmExit = _window->GetExitResult();
-
-        // Check for exit message
-        //if (!wmExit.handled)
-        //{
-        //    // Uninit all scenes
-        //    for (auto& scene : _activeScenes)
-        //        scene->Uninit();
-
-        //    _closed = true;
-        //    break;
-        //}
 
         ztime::clock[CLOCK_GAME].Update();
         ztime::clock[CLOCK_MAIN].Update();
@@ -298,32 +298,28 @@ void zwnd::Window::_UIThread()
         _window->LockSize();
 
         // Check for resize
-        zwnd::MessageWindowSize windowSize = _window->GetMessageWindowSize();
-        if (windowSize.changed)
+        if (_windowSizeMessage.has_value())
         {
-            // Resize render target
-            //if (_window->gfx.Initialized())
-            //    _window->gfx.ResizeBuffers(windowSize.width, windowSize.height, false);
-
+            int newWidth = _windowSizeMessage->width;
+            int newHeight = _windowSizeMessage->height;
             RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
 
             // Resize regular scenes
             for (auto& scene : _activeScenes)
                 scene->Resize(
-                    windowSize.width - clientAreaMargins.left - clientAreaMargins.right,
-                    windowSize.height - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarHeight()
+                    newWidth - clientAreaMargins.left - clientAreaMargins.right,
+                    newHeight - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarHeight()
                 );
             // Resize title bar scene
             ((Scene*)_titleBarScene.get())->Resize(
-                windowSize.width - clientAreaMargins.left - clientAreaMargins.right,
+                newWidth - clientAreaMargins.left - clientAreaMargins.right,
                 _titleBarScene->TitleBarHeight()
             );
             // Resize non-client area scene
-            ((Scene*)_nonClientAreaScene.get())->Resize(windowSize.width, windowSize.height);
+            ((Scene*)_nonClientAreaScene.get())->Resize(newWidth, newHeight);
         }
 
         // Render frame
-        //_window->gfx.Lock();
         _window->gfx.BeginFrame();
 
         // Pass title bar item and non-client area scene properties to underlying window thread
@@ -369,8 +365,6 @@ void zwnd::Window::_UIThread()
                 redraw = true;
         }
 
-        //_window->SetSize(_window->GetWidth() + 1, _window->GetHeight() + 1);
-
         //std::cout << "Updated " << ++framecounter << '\n';
         redraw = true;
         if (redraw)
@@ -379,7 +373,6 @@ void zwnd::Window::_UIThread()
             Graphics g = _window->gfx.GetGraphics();
             g.target->BeginDraw();
             g.target->Clear();
-            //g.target->Clear(D2D1::ColorF(0.0f, 0.5f, 0.8f));
 
             RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
             D2D1_SIZE_F clientSize = {
@@ -434,7 +427,6 @@ void zwnd::Window::_UIThread()
             // Draw non-client area scene
             _nonClientAreaScene->SetClientAreaBitmap(clientAreaBitmap);
             ((Scene*)_nonClientAreaScene.get())->Draw(g);
-            //g.target->Clear(D2D1::ColorF(0.0f, 0.5f, 0.9f));
 
             g.target->DrawBitmap(((Scene*)_nonClientAreaScene.get())->Image());
             clientAreaBitmap->Release();
@@ -447,6 +439,8 @@ void zwnd::Window::_UIThread()
                 (GetKeyState('S') & 0x8000) &&
                 (GetKeyState('F') & 0x8000))
             {
+                IDWriteTextLayout* dwriteTextLayout = nullptr;
+
                 std::wstringstream ss;
                 ss << framecounter++;
                 dwriteFactory->CreateTextLayout(
@@ -482,25 +476,23 @@ void zwnd::Window::_UIThread()
             _scenesToUninitialize.pop_front();
         }
 
-        //Clock c(0);
         _window->gfx.EndFrame(redraw);
 
-        //_window->SetWidth(_window->GetWidth() + 1);
-        //c.Update();
-        //std::cout << c.Now().GetTime() << std::endl;
-        //_window->gfx.Unlock();
-
-        // Prevent deadlock from extremely short unlock-lock cycle
-        // (it doesn't make sense to me either but for some reason
-        // the mutexes aren't locked in order of 'Lock()' calls)
-        //Clock sleepTimer = Clock(0);
-        //do sleepTimer.Update();
-        //while (sleepTimer.Now().GetTime(MICROSECONDS) < 10);
+        if (_closed)
+            break;
     }
 
+    for (auto& scene : _activeScenes)
+        scene->Uninit();
+    _activeScenes.clear();
+    ((Scene*)_titleBarScene.get())->Uninit();
+    _titleBarScene.reset();
+    ((Scene*)_nonClientAreaScene.get())->Uninit();
+    _nonClientAreaScene.reset();
+
     // Release text rendering resources
-    //dwriteFactory->Release();
-    //dwriteTextFormat->Release();
+    dwriteTextFormat->Release();
+    dwriteFactory->Release();
 }
 
 void zwnd::Window::_PassParamsToHitTest()

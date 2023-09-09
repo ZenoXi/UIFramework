@@ -30,7 +30,6 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props) : _h
     _linfo.SetHeight(props.initialHeight);
     _messageWidth = props.initialWidth;
     _messageHeight = props.initialHeight;
-    _messageSizeChanged = true;
 
     OleInitialize(NULL);
 
@@ -94,16 +93,13 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props) : _h
     ShowWindow(_hwnd, SW_SHOWNORMAL);
     UpdateWindow(_hwnd);
 
-
-    //EnumWindows(enum_windows_callback, NULL);
-
-    //MARGINS margins = { 70, 70, 70, 70 };
-    //DwmExtendFrameIntoClientArea(_hwnd, &margins);
-
     // Send resize message to UI
-    //_m_msg.lock();
-    //_msgQueue.push({ false, WM_SIZE, SIZE_RESTORED, MAKELPARAM(props.initialWidth, props.initialHeight) });
-    //_m_msg.unlock();
+    WindowSizeMessage message;
+    message.width = _messageWidth;
+    message.height = _messageHeight;
+    _m_msg.lock();
+    _msgQueue.push(message.Encode());
+    _m_msg.unlock();
 }
 
 zwnd::WindowBackend::~WindowBackend()
@@ -111,7 +107,7 @@ zwnd::WindowBackend::~WindowBackend()
     gfx.Close();
 
     RevokeDragDrop(_hwnd);
-    CloseWindow(_hwnd);
+    DestroyWindow(_hwnd);
 
     UnregisterClass(_wndClassName, _hInst);
     OleUninitialize();
@@ -127,20 +123,6 @@ void zwnd::WindowBackend::UnlockSize()
     _m_windowSize.unlock();
 }
 
-zwnd::MessageWindowSize zwnd::WindowBackend::GetMessageWindowSize()
-{
-    std::lock_guard lock(_m_messageSize);
-    if (_messageSizeChanged)
-    {
-        _messageSizeChanged = false;
-        return MessageWindowSize{ _messageWidth, _messageHeight, true };
-    }
-    else
-    {
-        return MessageWindowSize{ _messageWidth, _messageHeight, false };
-    }
-}
-
 void zwnd::WindowBackend::UpdateLayeredWindow()
 {
     HRESULT hr;
@@ -150,26 +132,8 @@ void zwnd::WindowBackend::UpdateLayeredWindow()
     hr = gfx.GetGraphics().target->QueryInterface(&GDIRT);
     hr = GDIRT->GetDC(D2D1_DC_INITIALIZE_MODE_COPY, &hdc);
 
-    D2D1_SIZE_F surfaceSize = gfx.GetSurfaceSize();
-    if ((int)surfaceSize.width != GetWidth() || (int)surfaceSize.height != GetHeight())
-    {
-        //std::cout << "Get fucked - " << GetWidth() << ':' << GetHeight() << " - " << (UINT)gfx.GetSurfaceSize().width << ':' << (UINT)gfx.GetSurfaceSize().height << std::endl;
-        //_linfo.SetWidth((UINT)gfx.GetSurfaceSize().width);
-        //_linfo.SetHeight((UINT)gfx.GetSurfaceSize().height);
-        //_linfo.Update(_hwnd, hdc);
-    }
-    //else
-    //{
-    //    _linfo.SetWidth((UINT)gfx.GetSurfaceSize().width);
-    //    _linfo.SetHeight((UINT)gfx.GetSurfaceSize().height);
-    //    _linfo.Update(_hwnd, hdc);
-    //}
-
-    //std::cout << "Layered update - " << GetWidth() << ':' << GetWidth() << " - " << (UINT)gfx.GetSurfaceSize().width << ':' << (UINT)gfx.GetSurfaceSize().height << std::endl;
     _linfo.SetWidth((UINT)GetWidth());
     _linfo.SetHeight((UINT)GetHeight());
-    //_linfo.SetWidth((UINT)gfx.GetSurfaceSize().width);
-    //_linfo.SetHeight((UINT)gfx.GetSurfaceSize().height);
     _linfo.Update(_hwnd, hdc);
 
     GDIRT->ReleaseDC(nullptr);
@@ -204,37 +168,6 @@ void zwnd::WindowBackend::ProcessQueueMessages(std::function<void(WindowMessage)
     }
 }
 
-zwnd::WindowMessage zwnd::WindowBackend::GetSizeResult()
-{
-    _m_msg.lock();
-    WindowMessage wm = _sizeResult;
-    //_sizeResult.handled = true;
-    //_sizeResult.lParam = 0;
-    //_sizeResult.wParam = 0;
-    _m_msg.unlock();
-    return wm;
-}
-
-zwnd::WindowMessage zwnd::WindowBackend::GetMoveResult()
-{
-    _m_msg.lock();
-    WindowMessage wm = _moveResult;
-    //_moveResult.handled = true;
-    //_moveResult.lParam = 0;
-    //_moveResult.wParam = 0;
-    _m_msg.unlock();
-    return wm;
-}
-
-zwnd::WindowMessage zwnd::WindowBackend::GetExitResult()
-{
-    _m_msg.lock();
-    WindowMessage wm = _exitResult;
-    //_exitResult.handled = true;
-    _m_msg.unlock();
-    return wm;
-}
-
 LRESULT WINAPI zwnd::WindowBackend::_HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     // use create parameter passed in from CreateWindow() to store window class pointer at WinAPI side
@@ -266,10 +199,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
 {
     switch (msg)
     {
-    //case WM_DESTROY:
-    //{
-    //    break;
-    //}
     case WM_CLOSE:
     {
         _m_msg.lock();
@@ -299,22 +228,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
         break;
     }
-    //case WM_NCACTIVATE:
-    //{
-    //    break;
-    //}
-    //case WM_PAINT:
-    //{
-    //    std::cout << "WM_PAINT\n";
-    //    return DefWindowProc(hWnd, msg, wParam, lParam);
-    //    break;
-    //}
-    //case WM_NCPAINT:
-    //{
-    //    std::cout << "WM_NCPAINT\n";
-    //    return DefWindowProc(hWnd, msg, wParam, lParam);
-    //    break;
-    //}
     case WM_NCCALCSIZE:
     {
         // Capture all window area as client area
@@ -406,7 +319,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
             pt.x < _winMenuButtonRect.right &&
             pt.y < _winMenuButtonRect.bottom)
         {
-            std::cout << "SYSMENU hit at " << pt.x << ':' << pt.y << '\n';
             return HTSYSMENU;
         }
 
@@ -441,11 +353,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         }
 
         return HTNOWHERE;
-    }
-    case WM_NCMOUSEMOVE:
-    {
-        std::cout << "NCMOUSEMOVE\n";
-        break;
     }
     case WM_MOUSEMOVE:
     {
@@ -626,90 +533,25 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         _sizingStarted = false;
         break;
     }
-    //case WM_SIZING:
-    //{
-    //    // Sizing a layered window using the standard sizing border causes
-    //    // unwanted shrinking of the window right and bottom sides.
-    //    // This can be accounted for by adjusting the window size by the border
-    //    // thickness on each received sizing message.
-
-    //    RECT* rect = (RECT*)lParam;
-    //    bool rightEdge = wParam == WMSZ_TOPRIGHT || wParam == WMSZ_RIGHT || wParam == WMSZ_BOTTOMRIGHT;
-    //    bool bottomEdge = wParam == WMSZ_BOTTOMLEFT || wParam == WMSZ_BOTTOM || wParam == WMSZ_BOTTOMRIGHT;
-    //    // Both right and bottom edge effects can occur simultaneously
-
-    //    // When sizing by holding the right edge, the sizing rect
-    //    // shrinks horizontally left by the left and right border
-    //    // thickness
-    //    if (rightEdge && !bottomEdge)
-    //        rect->right += _borderThickness.left + _borderThickness.right;
-    //    // When sizing by holding the bottom edge, the sizing rect
-    //    // shrinks vertically up by the bottom border thickness
-    //    if (bottomEdge && !rightEdge)
-    //        rect->bottom += _borderThickness.bottom;
-
-    //    if (_sizingStarted)
-    //    {
-    //        // When sizing by holding anything but the right edge, the window
-    //        // will shrink horizontally left by the left and right border
-    //        // thickness on the first WM_SIZING message
-    //        if (!rightEdge)
-    //            rect->right += _borderThickness.left + _borderThickness.right;
-    //        // When sizing by holding anything but the bottom edge, the window
-    //        // will shrink vertically up by the bottom border thickness on the
-    //        // first WM_SIZING message
-    //        if (!bottomEdge)
-    //            rect->bottom += _borderThickness.bottom;
-
-    //        _sizingStarted = false;
-    //    }
-
-    //    break;
-    //}
     case WM_WINDOWPOSCHANGING:
     {
         WINDOWPOS* pos = (WINDOWPOS*)lParam;
-        // (pos->flags & SWP_NOSIZE)
+
         // Check if sizing occurs
         if (!(pos->flags & SWP_NOSIZE) && (_messageWidth != pos->cx || _messageHeight != pos->cy))
         {
-            std::cout << pos->cx << ":" << pos->cy << '\n';
             // Wait for window sizing to become available
             _m_windowSize.lock();
-            //std::lock_guard lock(_m_windowSize);
-            //_m_windowSize.lock();
-            //_m_windowSize.unlock();
-
-            // Lock the message size variables from being read
-            //_m_messageSize.lock();
         }
         return DefWindowProc(hWnd, msg, wParam, lParam);
-        break;
     }
-    //case WM_WINDOWPOSCHANGED:
-    //{
-    //    WINDOWPOS* pos = (WINDOWPOS*)lParam;
-    //    if (!(pos->flags & SWP_NOSIZE))
-    //        std::cout << pos->cx << ':' << pos->cy << std::endl;
-    //    return DefWindowProc(hWnd, msg, wParam, lParam);
-    //    break;
-    //}
     case WM_SIZE:
     {
         int w = LOWORD(lParam);
         int h = HIWORD(lParam);
 
-        //std::cout << "SIZE " << wParam << ' ' << w << ':' << h << '\n';
         _messageWidth = w;
         _messageHeight = h;
-        _messageSizeChanged = true;
-
-        // Adjust width and height to include the non-client area
-        //w += _borderThickness.left + _borderThickness.right;
-        //h += _borderThickness.top + _borderThickness.bottom;
-
-        //if (w == GetWidth() && h == GetHeight())
-        //    break;
 
         if (wParam == SIZE_RESTORED && !_fullscreen)
         {
@@ -729,7 +571,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         gfx.ResizeBuffers(w, h, false);
 
         _m_windowSize.unlock();
-        //_m_messageSize.unlock();
 
         WindowSizeMessage message;
         message.width = w;
@@ -737,15 +578,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         _m_msg.lock();
         _msgQueue.push(message.Encode());
         _m_msg.unlock();
-
-        //WINDOWPLACEMENT placement;
-        //GetWindowPlacement(hWnd, &placement);
-        //RECT rect;
-        //GetWindowRect(hWnd, &rect);
-        //if (placement.rcNormalPosition != rect)
-        //{
-        //    std::cout << "MAYBE AERO SNAP\n";
-        //}
 
         break;
     }
@@ -805,9 +637,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
             _m_msg.unlock();
         }
 
-        //_m_msg.lock();
-        //_msgQueue.push({ false, WM_SYSKEYDOWN, wParam, lParam });
-        //_m_msg.unlock();
         break;
     }
     case WM_SYSKEYUP:
@@ -838,9 +667,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
             _m_msg.unlock();
         }
 
-        //_m_msg.lock();
-        //_msgQueue.push({ false, WM_SYSKEYUP, wParam, lParam });
-        //_m_msg.unlock();
         break;
     }
     case WM_CHAR:
@@ -862,145 +688,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
     }
 
     return 0;
-}
-
-void zwnd::WindowBackend::HandleMsgFromQueue(WindowMessage msg)
-{
-#ifdef false
-    switch (msg.msg)
-    {
-    case WM_MOUSEMOVE:
-    {
-        int x = (short)LOWORD(msg.lParam);
-        int y = (short)HIWORD(msg.lParam);
-
-        if (!_mouseInWindow)
-        {
-            _mouseInWindow = true;
-            for (auto h : _mouseHandlers)
-                h->OnMouseEnter();
-        }
-        for (auto h : _mouseHandlers)
-            h->OnMouseMove(x, y);
-
-        //if (x >= 0 && x < GetWidth() && y >= 0 && y < GetHeight())
-        //{
-        //    if (!_mouseInWindow)
-        //    {
-        //        _mouseInWindow = true;
-        //        for (auto h : _mouseHandlers) h->OnMouseEnter();
-        //    }
-        //    for (auto h : _mouseHandlers) h->OnMouseMove(x, y);
-        //}
-        //else
-        //{
-        //    if (msg.wParam & (MK_LBUTTON | MK_RBUTTON))
-        //    {
-        //        for (auto h : _mouseHandlers) h->OnMouseMove(x, y);
-        //    }
-        //    else
-        //    {
-        //        _mouseInWindow = false;
-        //        for (auto h : _mouseHandlers)
-        //        {
-        //            h->OnLeftReleased(x, y);
-        //            h->OnRightReleased(x, y);
-        //            h->OnMouseLeave();
-        //        }
-        //    }
-        //}
-        break;
-    }
-    case WM_MOUSELEAVE:
-    {
-        for (auto h : _mouseHandlers)
-            h->OnMouseLeave();
-        break;
-    }
-    case WM_LBUTTONDOWN:
-    {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        for (auto h : _mouseHandlers)
-            h->OnLeftPressed(x, y);
-        break;
-    }
-    case WM_RBUTTONDOWN:
-    {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        for (auto h : _mouseHandlers)
-            h->OnRightPressed(x, y);
-        break;
-    }
-    case WM_LBUTTONUP:
-    {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        for (auto h : _mouseHandlers)
-            h->OnLeftReleased(x, y);
-        break;
-    }
-    case WM_RBUTTONUP:
-    {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        for (auto h : _mouseHandlers)
-            h->OnRightReleased(x, y);
-        break;
-    }
-    case WM_MOUSEWHEEL:
-    {
-        int x = LOWORD(msg.lParam);
-        int y = HIWORD(msg.lParam);
-        if (GET_WHEEL_DELTA_WPARAM(msg.wParam) > 0)
-        {
-            for (auto h : _mouseHandlers)
-                h->OnWheelUp(x, y);
-        }
-        else if (GET_WHEEL_DELTA_WPARAM(msg.wParam) < 0)
-        {
-            for (auto h : _mouseHandlers)
-                h->OnWheelDown(x, y);
-        }
-        break;
-    }
-    case WM_KEYDOWN:
-    {
-        for (auto& h : _keyboardHandlers)
-            h->OnKeyDown(msg.wParam);
-        break;
-    }
-    case WM_KEYUP:
-    {
-        for (auto& h : _keyboardHandlers)
-            h->OnKeyUp(msg.wParam);
-        break;
-    }
-    case WM_CHAR:
-    {
-        for (auto& h : _keyboardHandlers)
-            h->OnChar(msg.wParam);
-        break;
-    }
-    case WM_MOVE:
-    {
-        _moveResult.handled = false;
-        _moveResult.msg = WM_MOVE;
-        _moveResult.lParam = msg.lParam;
-        _moveResult.wParam = msg.wParam;
-        break;
-    }
-    case WM_SIZE:
-    {
-        _sizeResult.handled = false;
-        _sizeResult.msg = WM_SIZE;
-        _sizeResult.lParam = msg.lParam;
-        _sizeResult.wParam = msg.wParam;
-        break;
-    }
-    }
-#endif
 }
 
 void zwnd::WindowBackend::HandleFullscreenChange()

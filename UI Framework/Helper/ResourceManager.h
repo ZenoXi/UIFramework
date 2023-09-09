@@ -29,6 +29,7 @@ class ResourceManager
 {
 public:
     ~ResourceManager();
+    void ReleaseResources();
 
     void CoInit();
     void CoUninit();
