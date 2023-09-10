@@ -198,6 +198,7 @@ namespace zwnd
 
         bool _fullscreen = false;
         bool _maximized = false;
+        bool _minimized = false;
         RECT _windowedRect;
         bool _windowedMaximized;
         bool _cursorVisible = true;

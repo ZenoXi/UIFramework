@@ -191,7 +191,7 @@ namespace zcom
                 }
                 if (item.item->Redraw())
                     item.item->Draw(g);
-                bitmaps.insert(it.base(), { item.item->Image(), item });
+                bitmaps.insert(it.base(), { item.item->ContentImage(), item });
             }
 
             // Draw the bitmaps
@@ -471,28 +471,49 @@ namespace zcom
 
             if (!hoveredComponents.empty())
             {
-                Component* topmost = hoveredComponents[0];
-                for (int i = 1; i < hoveredComponents.size(); i++)
-                {
-                    if (hoveredComponents[i]->GetZIndex() > topmost->GetZIndex())
-                    {
-                        topmost = hoveredComponents[i];
-                    }
-                }
+                // Sort components in ascending z-index order
+                std::sort(hoveredComponents.begin(), hoveredComponents.end(), [](zcom::Component* item1, zcom::Component* item2) { return item1->GetZIndex() > item2->GetZIndex(); });
 
-                for (int i = 0; i < hoveredComponents.size(); i++)
+                bool eventHandled = false;
+                EventTargets result;
+                for (auto& item : hoveredComponents)
                 {
-                    if (hoveredComponents[i] != topmost && hoveredComponents[i]->GetMouseInside())
+                    if (!eventHandled)
                     {
-                        hoveredComponents[i]->OnMouseLeave();
+                        result = item->OnMouseMove(adjX - item->GetX(), adjY - item->GetY());
+                        if (!result.Empty())
+                        {
+                            eventHandled = true;
+                            continue;
+                        }
                     }
+                    if (item->GetMouseInside())
+                        item->OnMouseLeave();
                 }
+                return std::move(result.Add(this, GetMousePosX(), GetMousePosY()));
 
-                if (!topmost->GetMouseInside())
-                {
-                    topmost->OnMouseEnter();
-                }
-                return topmost->OnMouseMove(adjX - topmost->GetX(), adjY - topmost->GetY()).Add(this, GetMousePosX(), GetMousePosY());
+                //Component* topmost = hoveredComponents[0];
+                //for (int i = 1; i < hoveredComponents.size(); i++)
+                //{
+                //    if (hoveredComponents[i]->GetZIndex() > topmost->GetZIndex())
+                //    {
+                //        topmost = hoveredComponents[i];
+                //    }
+                //}
+
+                //for (int i = 0; i < hoveredComponents.size(); i++)
+                //{
+                //    if (hoveredComponents[i] != topmost && hoveredComponents[i]->GetMouseInside())
+                //    {
+                //        hoveredComponents[i]->OnMouseLeave();
+                //    }
+                //}
+
+                //if (!topmost->GetMouseInside())
+                //{
+                //    topmost->OnMouseEnter();
+                //}
+                //return topmost->OnMouseMove(adjX - topmost->GetX(), adjY - topmost->GetY()).Add(this, GetMousePosX(), GetMousePosY());
             }
 
             if (_fallthroughMouseEvents)

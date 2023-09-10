@@ -30,20 +30,20 @@ public:
     static bool Exited();
 
 private: // Scene control
-    std::vector<Scene*> _scenes;
+    std::vector<zcom::Scene*> _scenes;
     int _currentSceneIndex = -1;
-    std::vector<Scene*> _activeScenes;
+    std::vector<zcom::Scene*> _activeScenes;
     std::deque<std::string> _scenesToUninitialize;
     bool _fullscreen = false;
 public:
-    Scene* CurrentScene();
+    zcom::Scene* CurrentScene();
     bool Fullscreen() const { return _fullscreen; }
     void Fullscreen(bool fullscreen);
     // Initializes the scene and places it behind all scenes, unfocused (unless no scenes are initialized)
-    bool InitScene(std::string name, SceneOptionsBase* options);
+    bool InitScene(std::string name, zcom::SceneOptionsBase* options);
     // Uninitializes and immediatelly initializes the scene with new options, keeping focus/z-order the same
     // If scene is not initialized, it just gets initialized as usual
-    bool ReinitScene(std::string name, SceneOptionsBase* options);
+    bool ReinitScene(std::string name, zcom::SceneOptionsBase* options);
     // Primes the scene to be uninitialized
     void UninitScene(std::string name);
 private:
@@ -57,9 +57,9 @@ public:
     bool MoveSceneBehind(std::string name, std::string behind);
     // If the scene is already in front, it isn't moved
     bool MoveSceneInFront(std::string name, std::string inFront);
-    std::vector<Scene*> ActiveScenes();
-    Scene* FindScene(std::string name);
-    Scene* FindActiveScene(std::string name);
+    std::vector<zcom::Scene*> ActiveScenes();
+    zcom::Scene* FindScene(std::string name);
+    zcom::Scene* FindActiveScene(std::string name);
 private:
     int FindSceneIndex(std::string name);
     int FindActiveSceneIndex(std::string name);

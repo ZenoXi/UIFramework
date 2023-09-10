@@ -44,6 +44,9 @@ namespace zwnd
     public:
         int width;
         int height;
+        bool maximized = false;
+        bool minimized = false;
+        bool restored = false;
 
         WindowMessage Encode()
         {
@@ -51,6 +54,9 @@ namespace zwnd
             msg.id = ID();
             *(int*)(msg.data + 0) = width;
             *(int*)(msg.data + 4) = height;
+            *(bool*)(msg.data + 8) = maximized;
+            *(bool*)(msg.data + 9) = minimized;
+            *(bool*)(msg.data + 10) = restored;
             return msg;
         }
 
@@ -61,6 +67,9 @@ namespace zwnd
 
             width = *(int*)(msg.data + 0);
             height = *(int*)(msg.data + 4);
+            maximized = *(bool*)(msg.data + 8);
+            minimized = *(bool*)(msg.data + 9);
+            restored = *(bool*)(msg.data + 10);
             return true;
         }
 

@@ -171,6 +171,10 @@
     <ClCompile Include="Scenes\EntryScene.cpp" />
     <ClCompile Include="Scenes\Scene.cpp" />
     <ClCompile Include="Scenes\DefaultTitleBarScene.cpp" />
+    <ClCompile Include="Scenes\TestScene.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="UI Framework.cpp" />
     <ClCompile Include="Window\DisplayWindow.cpp" />
     <ClCompile Include="Window\Window.cpp" />
@@ -204,6 +208,10 @@
     <ClInclude Include="Scenes\EntryScene.h" />
     <ClInclude Include="Scenes\Scene.h" />
     <ClInclude Include="Scenes\DefaultTitleBarScene.h" />
+    <ClInclude Include="Scenes\TestScene.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
     <ClInclude Include="Window\CursorIcon.h" />
     <ClInclude Include="Window\FileDropHandler.h" />
     <ClInclude Include="Window\GdiInclude.h" />

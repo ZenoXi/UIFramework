@@ -5,12 +5,6 @@
 
 #include <functional>
 
-// Options for switching scenes
-struct SceneOptionsBase
-{
-    
-};
-
 enum class NotificationPosition
 {
     TOP_LEFT,
@@ -27,71 +21,86 @@ namespace zwnd
     class Window;
 }
 
-
-class Scene
+namespace zcom
 {
-    friend class App;
-    friend class zwnd::Window;
-protected:
-    App* _app;
-    zwnd::Window* _window;
-    zcom::Canvas* _canvas;
-    bool _initialized = false;
-    bool _focused = false;
-
-    Scene(App* app, zwnd::Window* window);
-public:
-    virtual ~Scene();
-protected:
-    void Init(const SceneOptionsBase* options);
-    void Uninit();
-    void Focus();
-    void Unfocus();
-public:
-    bool Focused() const;
-
-protected:
-    void Update();
-    bool Redraw();
-    ID2D1Bitmap* Draw(Graphics g);
-    ID2D1Bitmap* Image();
-    void Resize(int width, int height);
-
-    // Component creation
-    template<class T, typename... Args>
-    std::unique_ptr<T> Create(Args&&... args)
+    struct ResizeInfo
     {
-        auto uptr = std::unique_ptr<T>(new T(this));
-        uptr->Init(std::forward<Args>(args)...);
-        return uptr;
-    }
+        bool windowMaximized = false;
+        bool windowMinimized = false;
+        bool windowRestored = false;
+    };
 
-public:
-    std::unique_ptr<zcom::Panel> CreatePanel()
+    // Options for switching scenes
+    struct SceneOptionsBase
     {
-        auto uptr = std::unique_ptr<zcom::Panel>(new zcom::Panel(this));
-        uptr->Init();
-        return uptr;
-    }
 
-public:
-    App* GetApp() const { return _app; }
-    zwnd::Window* GetWindow() const { return _window; }
+    };
 
-    zcom::Canvas* GetCanvas() const;
+    class Scene
+    {
+        friend class App;
+        friend class zwnd::Window;
+    protected:
+        App* _app;
+        zwnd::Window* _window;
+        Canvas* _canvas;
+        bool _initialized = false;
+        bool _focused = false;
 
-private:
-    virtual void _Init(const SceneOptionsBase* options) = 0;
-    virtual void _Uninit() = 0;
-    virtual void _Focus() = 0;
-    virtual void _Unfocus() = 0;
+        Scene(App* app, zwnd::Window* window);
+    public:
+        virtual ~Scene();
+    protected:
+        void Init(const SceneOptionsBase* options);
+        void Uninit();
+        void Focus();
+        void Unfocus();
+    public:
+        bool Focused() const;
 
-    virtual void _Update() = 0;
-    virtual bool _Redraw() { return _canvas->Redraw(); }
-    virtual ID2D1Bitmap* _Draw(Graphics g) { return _canvas->Draw(g); }
-    virtual ID2D1Bitmap* _Image() { return _canvas->Image(); }
-    virtual void _Resize(int width, int height) = 0;
+    protected:
+        void Update();
+        bool Redraw();
+        ID2D1Bitmap* Draw(Graphics g);
+        ID2D1Bitmap* ContentImage();
+        void Resize(int width, int height, ResizeInfo info = {});
 
-public:
-    virtual const char* GetName() const = 0;
-};
+        // Component creation
+        template<class T, typename... Args>
+        std::unique_ptr<T> Create(Args&&... args)
+        {
+            auto uptr = std::unique_ptr<T>(new T(this));
+            uptr->Init(std::forward<Args>(args)...);
+            return uptr;
+        }
+
+    public:
+        std::unique_ptr<Panel> CreatePanel()
+        {
+            auto uptr = std::unique_ptr<Panel>(new Panel(this));
+            uptr->Init();
+            return uptr;
+        }
+
+    public:
+        App* GetApp() const { return _app; }
+        zwnd::Window* GetWindow() const { return _window; }
+
+        Canvas* GetCanvas() const;
+
+    private:
+        virtual void _Init(const SceneOptionsBase* options) = 0;
+        virtual void _Uninit() = 0;
+        virtual void _Focus() = 0;
+        virtual void _Unfocus() = 0;
+
+        virtual void _Update() = 0;
+        virtual bool _Redraw() { return _canvas->Redraw(); }
+        virtual ID2D1Bitmap* _Draw(Graphics g) { return _canvas->Draw(g); }
+        virtual ID2D1Bitmap* _Image() { return _canvas->ContentImage(); }
+        virtual void _Resize(int width, int height, ResizeInfo info) = 0;
+
+    public:
+        virtual const char* GetName() const = 0;
+    };
+}

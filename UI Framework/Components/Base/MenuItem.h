@@ -80,7 +80,7 @@ namespace zcom
                 else
                     _iconImage->SetImage(_iconGrayscale);
                 _iconImage->Draw(g);
-                g.target->DrawBitmap(_iconImage->Component::Image(), D2D1::RectF(2.0f, 0.0f, 27.0f, 25.0f));
+                g.target->DrawBitmap(_iconImage->Component::ContentImage(), D2D1::RectF(2.0f, 0.0f, 27.0f, 25.0f));
             }
             if (_checkmarkIcon && _checked)
             {
@@ -94,7 +94,7 @@ namespace zcom
                     _menuExpandImage->Draw(g);
 
                 auto size = g.target->GetSize();
-                g.target->DrawBitmap(_menuExpandImage->Component::Image(), D2D1::RectF(
+                g.target->DrawBitmap(_menuExpandImage->Component::ContentImage(), D2D1::RectF(
                     size.width - 25,
                     0,
                     size.width,

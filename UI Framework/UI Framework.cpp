@@ -13,6 +13,7 @@
 #include "Scenes/DefaultNonClientAreaScene.h"
 #include "Scenes/DefaultTitleBarScene.h"
 #include "Scenes/EntryScene.h"
+#include "Scenes/TestScene.h"
 
 #include "Helper/ResourceManager.h"
 #include "Helper/Time.h"
@@ -53,6 +54,14 @@ int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
     }
     LocalFree(pArgs);
 
+    std::vector<int> vec;
+    //vec.push_back(0);
+    for (auto it = vec.begin(); it != vec.end(); it++)
+    {
+        vec.erase(it);
+        break;
+    }
+
     // Create window
     //DisplayWindow window(hInst, cmdLine, L"class");
 
@@ -69,9 +78,10 @@ int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
     {
         wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
         wnd->resourceManager.InitAllImages();
-        wnd->LoadNonClientAreaScene<DefaultNonClientAreaScene>(nullptr);
-        wnd->LoadTitleBarScene<DefaultTitleBarScene>(nullptr);
-        wnd->LoadStartingScene<EntryScene>(nullptr);
+        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
+        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
+        wnd->LoadStartingScene<zcom::TestScene>(nullptr);
     });
 
     //zwnd::Window wnd2 = zwnd::Window(App::Instance(), zwnd::WindowProperties{ L"Window 2", L"wndClass2", 0 }, hInst, [](zwnd::Window* wnd)

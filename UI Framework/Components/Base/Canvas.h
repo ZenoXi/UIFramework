@@ -103,9 +103,9 @@ namespace zcom
             return _panel->Draw(g);
         }
 
-        ID2D1Bitmap* Image()
+        ID2D1Bitmap* ContentImage()
         {
-            return _panel->Image();
+            return _panel->ContentImage();
         }
 
         void Resize(int width, int height)

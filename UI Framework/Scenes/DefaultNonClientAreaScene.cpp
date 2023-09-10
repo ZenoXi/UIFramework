@@ -2,71 +2,69 @@
 #include "Window/Window.h"
 #include "DefaultNonClientAreaScene.h"
 
-DefaultNonClientAreaScene::DefaultNonClientAreaScene(App* app, zwnd::Window* window)
+zcom::DefaultNonClientAreaScene::DefaultNonClientAreaScene(App* app, zwnd::Window* window)
     : Scene(app, window)
 {}
 
-RECT DefaultNonClientAreaScene::GetResizingBorderWidths()
+RECT zcom::DefaultNonClientAreaScene::GetResizingBorderWidths()
 {
     return { 7, 7, 7, 7 };
 }
 
-RECT DefaultNonClientAreaScene::GetClientAreaMargins()
+RECT zcom::DefaultNonClientAreaScene::GetClientAreaMargins()
 {
     return { 7, 7, 7, 7 };
 }
 
-void DefaultNonClientAreaScene::SetClientAreaBitmap(ID2D1Bitmap* clientAreaBitmap)
+void zcom::DefaultNonClientAreaScene::SetClientAreaBitmap(ID2D1Bitmap* clientAreaBitmap)
 {
     _clientAreaBitmap = clientAreaBitmap;
 }
 
-void DefaultNonClientAreaScene::SetTitleBarBitmap(ID2D1Bitmap* titleBarBitmap)
+void zcom::DefaultNonClientAreaScene::SetTitleBarBitmap(ID2D1Bitmap* titleBarBitmap)
 {
     _titleBarBitmap = titleBarBitmap;
 }
 
-void DefaultNonClientAreaScene::SetContentBitmap(ID2D1Bitmap* contentBitmap)
+void zcom::DefaultNonClientAreaScene::SetContentBitmap(ID2D1Bitmap* contentBitmap)
 {
     _contentBitmap = contentBitmap;
 }
 
-void DefaultNonClientAreaScene::_Init(const SceneOptionsBase* options)
+void zcom::DefaultNonClientAreaScene::_Init(const SceneOptionsBase* options)
 {
     DefaultNonClientAreaSceneOptions opt;
     if (options)
         opt = *reinterpret_cast<const DefaultNonClientAreaSceneOptions*>(options);
-
-
 }
 
-void DefaultNonClientAreaScene::_Uninit()
+void zcom::DefaultNonClientAreaScene::_Uninit()
 {
     _canvas->ClearComponents();
     GetWindow()->Backend().Graphics()->ReleaseResource((IUnknown**)&_ccanvas);
 }
 
-void DefaultNonClientAreaScene::_Focus()
+void zcom::DefaultNonClientAreaScene::_Focus()
 {
 
 }
 
-void DefaultNonClientAreaScene::_Unfocus()
+void zcom::DefaultNonClientAreaScene::_Unfocus()
 {
 
 }
 
-void DefaultNonClientAreaScene::_Update()
+void zcom::DefaultNonClientAreaScene::_Update()
 {
     _canvas->Update();
 }
 
-bool DefaultNonClientAreaScene::_Redraw()
+bool zcom::DefaultNonClientAreaScene::_Redraw()
 {
     return _redraw || !_ccanvas || _canvas->Redraw();
 }
 
-ID2D1Bitmap* DefaultNonClientAreaScene::_Draw(Graphics g)
+ID2D1Bitmap* zcom::DefaultNonClientAreaScene::_Draw(Graphics g)
 {
     _redraw = false;
 
@@ -129,7 +127,7 @@ ID2D1Bitmap* DefaultNonClientAreaScene::_Draw(Graphics g)
     // Draw scene elements
     if (_canvas->Redraw())
         _canvas->Draw(g);
-    g.target->DrawBitmap(_canvas->Image());
+    g.target->DrawBitmap(_canvas->ContentImage());
 
     // Unstash
     g.target->SetTarget(stash);
@@ -138,12 +136,12 @@ ID2D1Bitmap* DefaultNonClientAreaScene::_Draw(Graphics g)
     return _ccanvas;
 }
 
-ID2D1Bitmap* DefaultNonClientAreaScene::_Image()
+ID2D1Bitmap* zcom::DefaultNonClientAreaScene::_Image()
 {
     return _ccanvas;
 }
 
-void DefaultNonClientAreaScene::_Resize(int width, int height)
+void zcom::DefaultNonClientAreaScene::_Resize(int width, int height, ResizeInfo info)
 {
     GetWindow()->Backend().Graphics()->ReleaseResource((IUnknown**)&_ccanvas);
     _redraw = true;

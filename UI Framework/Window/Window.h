@@ -23,22 +23,22 @@ namespace zwnd
         ~Window();
         // Initialize the specified title bar scene. Should be called in the window init function *once*
         template<class _Scene>
-        void LoadTitleBarScene(SceneOptionsBase* opt);
+        void LoadTitleBarScene(zcom::SceneOptionsBase* opt);
         // Initialize the specified non-client area scene. Should be called in the window init function *once*
         template<class _Scene>
-        void LoadNonClientAreaScene(SceneOptionsBase* opt);
+        void LoadNonClientAreaScene(zcom::SceneOptionsBase* opt);
         // Initialize the specified starting scene. Should be called in the window init function *at least once*
         template<class _Scene>
-        void LoadStartingScene(SceneOptionsBase* opt);
+        void LoadStartingScene(zcom::SceneOptionsBase* opt);
 
     public: // Scene control
         // Initializes the scene and places it behind all scenes
         template<class _Scene>
-        void InitScene(SceneOptionsBase* opt);
+        void InitScene(zcom::SceneOptionsBase* opt);
         // Uninitializes and immediatelly initializes the scene with new options, keeping focus/z-order the same
         // If scene is not initialized, it just gets initialized as usual
         template<class _Scene>
-        void ReinitScene(SceneOptionsBase* opt);
+        void ReinitScene(zcom::SceneOptionsBase* opt);
         // Primes the scene to be uninitialized
         template<class _Scene>
         void UninitScene();
@@ -83,7 +83,7 @@ namespace zwnd
         template<class _Scene, class _InFront>
         bool MoveSceneInFront();
         // Return all active scenes
-        std::vector<Scene*> Scenes();
+        std::vector<zcom::Scene*> Scenes();
         // Get the specified scene (returns nullptr if the scene isn't active)
         template<class _Scene>
         _Scene* GetScene();
@@ -91,9 +91,9 @@ namespace zwnd
         template<class _Scene>
         int GetSceneZIndex();
         // Get the title bar scene
-        DefaultTitleBarScene* GetTitleBarScene();
+        zcom::DefaultTitleBarScene* GetTitleBarScene();
         // Get the non-client area scene
-        DefaultNonClientAreaScene* GetNonClientAreaScene();
+        zcom::DefaultNonClientAreaScene* GetNonClientAreaScene();
 
     public: // Fullscreen
         // Returns the fullscren state
@@ -125,21 +125,21 @@ namespace zwnd
         // Uninits a scene and removes it from the active scene list
         void _UninitScene(std::string name);
         // Finds an active scene with the specified name and returns a pointer to it (or null if not found)
-        Scene* _GetScene(std::string name);
+        zcom::Scene* _GetScene(std::string name);
         // Finds an active scene with the specified name and returns its index (or null if not found)
         int _GetSceneIndex(std::string name);
     private:
         // All currently active scenes
         // The scenes are drawn on top of each other, starting with the index 0
         // This means that the bottom-most scene is at index 0 and top-most scene is at the end of the vector
-        std::vector<std::unique_ptr<Scene>> _activeScenes;
+        std::vector<std::unique_ptr<zcom::Scene>> _activeScenes;
         // Scenes which are set to be uninitialized at the end of the frame
         std::deque<std::string> _scenesToUninitialize;
         // A special scene containing the title bar. Its customization allows for custom title bars
-        std::unique_ptr<DefaultTitleBarScene> _titleBarScene;
+        std::unique_ptr<zcom::DefaultTitleBarScene> _titleBarScene;
         // A special scene containing the non client area and its parameters
         // Used to render behind the title bar and client area
-        std::unique_ptr<DefaultNonClientAreaScene> _nonClientAreaScene;
+        std::unique_ptr<zcom::DefaultNonClientAreaScene> _nonClientAreaScene;
         // Set to true when any change to '_activeScenes' list occurs
         bool _sceneChanged = true;
 
@@ -184,37 +184,37 @@ namespace zwnd
     // /////////////////// //
 
     template<class _Scene>
-    void Window::LoadTitleBarScene(SceneOptionsBase* opt)
+    void Window::LoadTitleBarScene(zcom::SceneOptionsBase* opt)
     {
         _titleBarScene = std::make_unique<_Scene>(_app, this);
-        ((Scene*)_titleBarScene.get())->Init(opt);
+        ((zcom::Scene*)_titleBarScene.get())->Init(opt);
     }
 
     template<class _Scene>
-    void Window::LoadNonClientAreaScene(SceneOptionsBase* opt)
+    void Window::LoadNonClientAreaScene(zcom::SceneOptionsBase* opt)
     {
         _nonClientAreaScene = std::make_unique<_Scene>(_app, this);
-        ((Scene*)_nonClientAreaScene.get())->Init(opt);
+        ((zcom::Scene*)_nonClientAreaScene.get())->Init(opt);
     }
 
     template<class _Scene>
-    void Window::LoadStartingScene(SceneOptionsBase* opt)
+    void Window::LoadStartingScene(zcom::SceneOptionsBase* opt)
     {
         InitScene<_Scene>(opt);
     }
 
     template<class _Scene>
-    void Window::InitScene(SceneOptionsBase* opt)
+    void Window::InitScene(zcom::SceneOptionsBase* opt)
     {
         auto scene = std::make_unique<_Scene>(_app, this);
-        ((Scene*)scene.get())->Init(opt);
+        ((zcom::Scene*)scene.get())->Init(opt);
 
         _activeScenes.insert(_activeScenes.begin(), std::move(scene));
         _sceneChanged = true;
     }
 
     template<class _Scene>
-    void Window::ReinitScene(SceneOptionsBase* opt)
+    void Window::ReinitScene(zcom::SceneOptionsBase* opt)
     {
         _Scene* scene = GetScene<_Scene>();
         if (scene)

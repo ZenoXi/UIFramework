@@ -53,31 +53,31 @@ void zwnd::Window::_UninitScene(std::string name)
     if (index == -1)
         return;
 
-    Scene* scene = _activeScenes[index].get();
+    zcom::Scene* scene = _activeScenes[index].get();
     scene->Uninit();
     _activeScenes.erase(_activeScenes.begin() + index);
     _sceneChanged = true;
 }
 
-std::vector<Scene*> zwnd::Window::Scenes()
+std::vector<zcom::Scene*> zwnd::Window::Scenes()
 {
-    std::vector<Scene*> scenes(_activeScenes.size());
+    std::vector<zcom::Scene*> scenes(_activeScenes.size());
     for (int i = 0; i < _activeScenes.size(); i++)
         scenes[i] = _activeScenes[i].get();
     return scenes;
 }
 
-DefaultTitleBarScene* zwnd::Window::GetTitleBarScene()
+zcom::DefaultTitleBarScene* zwnd::Window::GetTitleBarScene()
 {
     return _titleBarScene.get();
 }
 
-DefaultNonClientAreaScene* zwnd::Window::GetNonClientAreaScene()
+zcom::DefaultNonClientAreaScene* zwnd::Window::GetNonClientAreaScene()
 {
     return _nonClientAreaScene.get();
 }
 
-Scene* zwnd::Window::_GetScene(std::string name)
+zcom::Scene* zwnd::Window::_GetScene(std::string name)
 {
     for (int i = 0; i < _activeScenes.size(); i++)
         if (_activeScenes[i]->GetName() == name)
@@ -302,21 +302,27 @@ void zwnd::Window::_UIThread()
         {
             int newWidth = _windowSizeMessage->width;
             int newHeight = _windowSizeMessage->height;
+            zcom::ResizeInfo resizeInfo;
+            resizeInfo.windowMaximized = _windowSizeMessage->maximized;
+            resizeInfo.windowMinimized = _windowSizeMessage->minimized;
+            resizeInfo.windowRestored = _windowSizeMessage->restored;
             RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
 
             // Resize regular scenes
             for (auto& scene : _activeScenes)
                 scene->Resize(
                     newWidth - clientAreaMargins.left - clientAreaMargins.right,
-                    newHeight - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarHeight()
+                    newHeight - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarHeight(),
+                    resizeInfo
                 );
             // Resize title bar scene
-            ((Scene*)_titleBarScene.get())->Resize(
+            ((zcom::Scene*)_titleBarScene.get())->Resize(
                 newWidth - clientAreaMargins.left - clientAreaMargins.right,
-                _titleBarScene->TitleBarHeight()
+                _titleBarScene->TitleBarHeight(),
+                resizeInfo
             );
             // Resize non-client area scene
-            ((Scene*)_nonClientAreaScene.get())->Resize(newWidth, newHeight);
+            ((zcom::Scene*)_nonClientAreaScene.get())->Resize(newWidth, newHeight, resizeInfo);
         }
 
         // Render frame
@@ -342,9 +348,9 @@ void zwnd::Window::_UIThread()
             for (auto& scene : activeScenes)
                 scene->Update();
             // Update the title bar scene
-            ((Scene*)_titleBarScene.get())->Update();
+            ((zcom::Scene*)_titleBarScene.get())->Update();
             // Update the non-client area scene
-            ((Scene*)_nonClientAreaScene.get())->Update();
+            ((zcom::Scene*)_nonClientAreaScene.get())->Update();
         }
 
         { // Redraw checking
@@ -358,18 +364,18 @@ void zwnd::Window::_UIThread()
                 }
             }
             // Check for title scene redraw
-            if (((Scene*)_titleBarScene.get())->Redraw())
+            if (((zcom::Scene*)_titleBarScene.get())->Redraw())
                 redraw = true;
             // Check for non-client area scene redraw
-            if (((Scene*)_nonClientAreaScene.get())->Redraw())
+            if (((zcom::Scene*)_nonClientAreaScene.get())->Redraw())
                 redraw = true;
         }
 
         //std::cout << "Updated " << ++framecounter << '\n';
-        redraw = true;
+        //redraw = true;
         if (redraw)
         {
-            //std::cout << "Redrawn (" << framecounter++ << ")\n";
+            std::cout << "Redrawn (" << framecounter++ << ")\n";
             Graphics g = _window->gfx.GetGraphics();
             g.target->BeginDraw();
             g.target->Clear();
@@ -400,9 +406,9 @@ void zwnd::Window::_UIThread()
             g.target->Clear();
 
             // Draw the title bar scene
-            if (((Scene*)_titleBarScene.get())->Redraw())
-                ((Scene*)_titleBarScene.get())->Draw(g);
-            g.target->DrawBitmap(((Scene*)_titleBarScene.get())->Image());
+            if (((zcom::Scene*)_titleBarScene.get())->Redraw())
+                ((zcom::Scene*)_titleBarScene.get())->Draw(g);
+            g.target->DrawBitmap(((zcom::Scene*)_titleBarScene.get())->ContentImage());
 
             // Draw other scenes
             for (auto& scene : activeScenes)
@@ -410,7 +416,7 @@ void zwnd::Window::_UIThread()
                 if (scene->Redraw())
                     scene->Draw(g);
                 g.target->DrawBitmap(
-                    scene->Image(),
+                    scene->ContentImage(),
                     D2D1::RectF(
                         0.0f,
                         _titleBarScene->TitleBarHeight(),
@@ -426,9 +432,9 @@ void zwnd::Window::_UIThread()
 
             // Draw non-client area scene
             _nonClientAreaScene->SetClientAreaBitmap(clientAreaBitmap);
-            ((Scene*)_nonClientAreaScene.get())->Draw(g);
+            ((zcom::Scene*)_nonClientAreaScene.get())->Draw(g);
 
-            g.target->DrawBitmap(((Scene*)_nonClientAreaScene.get())->Image());
+            g.target->DrawBitmap(((zcom::Scene*)_nonClientAreaScene.get())->ContentImage());
             clientAreaBitmap->Release();
 
             if (GetKeyState(VK_SPACE) & 0x8000)
@@ -485,9 +491,9 @@ void zwnd::Window::_UIThread()
     for (auto& scene : _activeScenes)
         scene->Uninit();
     _activeScenes.clear();
-    ((Scene*)_titleBarScene.get())->Uninit();
+    ((zcom::Scene*)_titleBarScene.get())->Uninit();
     _titleBarScene.reset();
-    ((Scene*)_nonClientAreaScene.get())->Uninit();
+    ((zcom::Scene*)_nonClientAreaScene.get())->Uninit();
     _nonClientAreaScene.reset();
 
     // Release text rendering resources

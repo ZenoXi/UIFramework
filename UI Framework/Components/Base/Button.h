@@ -47,25 +47,32 @@ namespace zcom
 
             D2D1_COLOR_F color;
             zcom::Image* image = nullptr;
-            if (GetMouseInsideArea())
+            if (GetMouseLeftClicked())
             {
-                if (GetMouseLeftClicked())
+                if (GetMouseInsideArea())
                 {
                     color = _colorClicked;
                     image = _imageClicked.get();
                 }
                 else
                 {
-                    color = _colorHovered;
-                    image = _imageHovered.get();
+                    color = _color;
+                    image = _image.get();
                 }
             }
             else
             {
-                color = _color;
-                image = _image.get();
+                if (GetMouseInside())
+                {
+                    color = _colorHovered;
+                    image = _imageHovered.get();
+                }
+                else
+                {
+                    color = _color;
+                    image = _image.get();
+                }
             }
-            
             // Draw button color
             ID2D1SolidColorBrush* brush;
             g.target->CreateSolidColorBrush(color, &brush);
@@ -78,7 +85,7 @@ namespace zcom
 
             // Draw button image
             if (image && image->GetImage())
-                g.target->DrawBitmap(image->Component::Image());
+                g.target->DrawBitmap(image->ContentImage());
 
             // Draw button text
             g.target->DrawBitmap(
@@ -98,6 +105,16 @@ namespace zcom
             _image->Resize(width, height);
             _imageHovered->Resize(width, height);
             _imageClicked->Resize(width, height);
+        }
+
+        void _OnMouseEnter()
+        {
+            InvokeRedraw();
+        }
+
+        void _OnMouseLeave()
+        {
+            InvokeRedraw();
         }
 
         void _OnMouseEnterArea()

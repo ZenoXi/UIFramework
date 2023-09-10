@@ -13,8 +13,6 @@
 #include "Helper/Event.h"
 #include "Helper/Time.h"
 
-class Scene;
-
 namespace zcom
 {
     enum class Alignment
@@ -124,6 +122,8 @@ namespace zcom
             return _targets;
         }
     };
+
+    class Scene;
 
     // The base component class
     class Component
@@ -678,6 +678,8 @@ namespace zcom
             auto targets = _OnMouseMove(deltaX, deltaY);
             _postMouseMove.InvokeAll(this, targets.GetTargets(), deltaX, deltaY);
 
+            if (!targets.Empty())
+                OnMouseEnter();
             if (targets.Size() == 1 && targets.MainTarget() == this)
             {
                 // Set cursor
@@ -1280,7 +1282,7 @@ namespace zcom
             return _canvas;
         }
 
-        ID2D1Bitmap* Image()
+        ID2D1Bitmap* ContentImage()
         {
             return _canvas;
         }

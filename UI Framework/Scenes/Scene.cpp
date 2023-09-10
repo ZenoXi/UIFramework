@@ -3,24 +3,24 @@
 #include "Window/Window.h"
 #include "Scene.h"
 
-Scene::Scene(App* app, zwnd::Window* window)
+zcom::Scene::Scene(App* app, zwnd::Window* window)
     : _app(app), _window(window)
 {
 
 }
 
-Scene::~Scene()
+zcom::Scene::~Scene()
 {
 }
 
-void Scene::Init(const SceneOptionsBase* options)
+void zcom::Scene::Init(const SceneOptionsBase* options)
 {
-    _canvas = new zcom::Canvas(Create<zcom::Panel>(), 1, 1);
+    _canvas = new zcom::Canvas(Create<Panel>(), 1, 1);
     _Init(options);
     _initialized = true;
 }
 
-void Scene::Uninit()
+void zcom::Scene::Uninit()
 {
     Unfocus();
     _Uninit();
@@ -29,14 +29,14 @@ void Scene::Uninit()
     _initialized = false;
 }
 
-void Scene::Focus()
+void zcom::Scene::Focus()
 {
     _focused = true;
     _window->keyboardManager.AddHandler(_canvas);
     _Focus();
 }
 
-void Scene::Unfocus()
+void zcom::Scene::Unfocus()
 {
     if (!_focused)
         return;
@@ -50,38 +50,38 @@ void Scene::Unfocus()
     _Unfocus();
 }
 
-bool Scene::Focused() const
+bool zcom::Scene::Focused() const
 {
     return _focused;
 }
 
-void Scene::Update()
+void zcom::Scene::Update()
 {
     _Update();
 }
 
-bool Scene::Redraw()
+bool zcom::Scene::Redraw()
 {
     return _Redraw();
 }
 
-ID2D1Bitmap* Scene::Draw(Graphics g)
+ID2D1Bitmap* zcom::Scene::Draw(Graphics g)
 {
     return _Draw(g);
 }
 
-ID2D1Bitmap* Scene::Image()
+ID2D1Bitmap* zcom::Scene::ContentImage()
 {
     return _Image();
 }
 
-void Scene::Resize(int width, int height)
+void zcom::Scene::Resize(int width, int height, ResizeInfo info)
 {
     _canvas->Resize(width, height);
-    _Resize(width, height);
+    _Resize(width, height, info);
 }
 
-zcom::Canvas* Scene::GetCanvas() const
+zcom::Canvas* zcom::Scene::GetCanvas() const
 {
     return _canvas;
 }

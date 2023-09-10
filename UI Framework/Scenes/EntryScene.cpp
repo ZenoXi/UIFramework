@@ -2,11 +2,11 @@
 #include "Window/Window.h"
 #include "EntryScene.h"
 
-EntryScene::EntryScene(App* app, zwnd::Window* window)
+zcom::EntryScene::EntryScene(App* app, zwnd::Window* window)
     : Scene(app, window)
 {}
 
-void EntryScene::_Init(const SceneOptionsBase* options)
+void zcom::EntryScene::_Init(const SceneOptionsBase* options)
 {
     EntrySceneOptions opt;
     if (options)
@@ -33,34 +33,40 @@ void EntryScene::_Init(const SceneOptionsBase* options)
     //    _window->Fullscreen(!_window->Fullscreen());
     //});
 
+    _button = Create<Button>(L"Entry");
+    _button->SetBaseSize(100, 40);
+    _button->SetOffsetPixels(150, 120);
+
+    _canvas->AddComponent(_button.get());
     //_canvas->AddComponent(_background.get());
     //_canvas->AddComponent(_helloWorldLabel.get());
     //_canvas->AddComponent(_testPanel.get());
-    _canvas->SetBackgroundColor(D2D1::ColorF(0.1f, 0.1f, 0.1f));
+    _canvas->SetBackgroundColor(D2D1::ColorF(0, 0.0f));
+    _canvas->SetOcclusive(false);
     //_canvas->SetBackgroundColor(D2D1::ColorF(0.0f, 0.0f, 0.0f));
 }
 
-void EntryScene::_Uninit()
+void zcom::EntryScene::_Uninit()
 {
     _canvas->ClearComponents();
 }
 
-void EntryScene::_Focus()
+void zcom::EntryScene::_Focus()
 {
 
 }
 
-void EntryScene::_Unfocus()
+void zcom::EntryScene::_Unfocus()
 {
 
 }
 
-void EntryScene::_Update()
+void zcom::EntryScene::_Update()
 {
     _canvas->Update();
 }
 
-void EntryScene::_Resize(int width, int height)
+void zcom::EntryScene::_Resize(int width, int height, ResizeInfo info)
 {
 
 }

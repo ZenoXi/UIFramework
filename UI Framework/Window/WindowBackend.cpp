@@ -90,13 +90,20 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props) : _h
 
     gfx.Initialize(&_hwnd);
 
-    ShowWindow(_hwnd, SW_SHOWNORMAL);
+    int showFlag = SW_SHOWNORMAL;
+    ShowWindow(_hwnd, showFlag);
     UpdateWindow(_hwnd);
 
     // Send resize message to UI
     WindowSizeMessage message;
     message.width = _messageWidth;
     message.height = _messageHeight;
+    if (showFlag == SW_SHOWMAXIMIZED)
+        message.maximized = true;
+    else if (showFlag == SW_SHOWMINIMIZED)
+        message.minimized = true;
+    else if (showFlag == SW_SHOWNORMAL)
+        message.restored = true;
     _m_msg.lock();
     _msgQueue.push(message.Encode());
     _m_msg.unlock();
@@ -553,28 +560,39 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         _messageWidth = w;
         _messageHeight = h;
 
+        WindowSizeMessage message;
+        message.width = w;
+        message.height = h;
+
         if (wParam == SIZE_RESTORED && !_fullscreen)
         {
             _last2Moves[0] = _last2Moves[1];
             GetWindowRect(_hwnd, &_last2Moves[1]);
             GetWindowRect(_hwnd, &_windowedRect);
+            if (_maximized || _minimized)
+                message.restored = true;
+            _maximized = false;
+            _minimized = false;
         }
         if (wParam == SIZE_MAXIMIZED)
         {
             _last2Moves[1] = _last2Moves[0];
+            _maximized = true;
+            _minimized = false;
+            message.maximized = true;
         }
         if (wParam == SIZE_MINIMIZED)
         {
             _last2Moves[1] = _last2Moves[0];
+            _minimized = true;
+            _maximized = false;
+            message.minimized = true;
         }
 
         gfx.ResizeBuffers(w, h, false);
 
         _m_windowSize.unlock();
 
-        WindowSizeMessage message;
-        message.width = w;
-        message.height = h;
         _m_msg.lock();
         _msgQueue.push(message.Encode());
         _m_msg.unlock();
@@ -987,11 +1005,7 @@ bool zwnd::WindowBackend::Maximized()
 
 void zwnd::WindowBackend::Maximize()
 {
-    WINDOWPLACEMENT placement;
-    placement.length = sizeof(WINDOWPLACEMENT);
-    GetWindowPlacement(_hwnd, &placement);
-    placement.showCmd = SW_SHOWMAXIMIZED;
-    SetWindowPlacement(_hwnd, &placement);
+    PostMessage(_hwnd, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
 }
 
 bool zwnd::WindowBackend::Minimized()
@@ -1004,20 +1018,12 @@ bool zwnd::WindowBackend::Minimized()
 
 void zwnd::WindowBackend::Minimize()
 {
-    WINDOWPLACEMENT placement;
-    placement.length = sizeof(WINDOWPLACEMENT);
-    GetWindowPlacement(_hwnd, &placement);
-    placement.showCmd = SW_SHOWMINIMIZED;
-    SetWindowPlacement(_hwnd, &placement);
+    PostMessage(_hwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
 }
 
 void zwnd::WindowBackend::Restore()
 {
-    WINDOWPLACEMENT placement;
-    placement.length = sizeof(WINDOWPLACEMENT);
-    GetWindowPlacement(_hwnd, &placement);
-    placement.showCmd = SW_RESTORE;
-    SetWindowPlacement(_hwnd, &placement);
+    PostMessage(_hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
 }
 
 void zwnd::WindowBackend::SetFullscreen(bool fullscreen)

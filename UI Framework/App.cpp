@@ -22,7 +22,7 @@ void App::Init(DisplayWindow& dw)
     }
 
     // Add scenes
-    Instance()->_scenes.push_back(new EntryScene(_instance, nullptr));
+    Instance()->_scenes.push_back(new zcom::EntryScene(_instance, nullptr));
 }
 
 void App::Start()
@@ -43,7 +43,7 @@ App* App::Instance()
     return _instance;
 }
 
-Scene* App::CurrentScene()
+zcom::Scene* App::CurrentScene()
 {
     if (_currentSceneIndex == -1)
     {
@@ -73,9 +73,9 @@ void App::Fullscreen(bool fullscreen)
 
 }
 
-bool App::InitScene(std::string name, SceneOptionsBase* options)
+bool App::InitScene(std::string name, zcom::SceneOptionsBase* options)
 {
-    Scene* scene = FindScene(name);
+    zcom::Scene* scene = FindScene(name);
     if (!scene) return false;
     if (FindActiveScene(name)) return true;
 
@@ -89,9 +89,9 @@ bool App::InitScene(std::string name, SceneOptionsBase* options)
     return true;
 }
 
-bool App::ReinitScene(std::string name, SceneOptionsBase* options)
+bool App::ReinitScene(std::string name, zcom::SceneOptionsBase* options)
 {
-    Scene* scene = FindActiveScene(name);
+    zcom::Scene* scene = FindActiveScene(name);
     if (scene)
     {
         // Remove scene from uninit pending
@@ -120,7 +120,7 @@ void App::UninitScene(std::string name)
 
 void App::_UninitScene(std::string name)
 {
-    Scene* scene = FindActiveScene(name);
+    zcom::Scene* scene = FindActiveScene(name);
     if (!scene)
         return;
 
@@ -155,7 +155,7 @@ bool App::MoveSceneToBack(std::string name)
     if (index == -1) return false;
     if (index == 0) return true;
 
-    Scene* scene = _activeScenes[index];
+    zcom::Scene* scene = _activeScenes[index];
     _activeScenes.erase(_activeScenes.begin() + index);
     _activeScenes.insert(_activeScenes.begin(), scene);
     if (index == _activeScenes.size() - 1)
@@ -207,7 +207,7 @@ bool App::MoveSceneBehind(std::string name, std::string behind)
     if (inFrontSceneIndex == -1) return false;
     if (sceneIndex < inFrontSceneIndex) return true;
 
-    Scene* scene = _activeScenes[sceneIndex];
+    zcom::Scene* scene = _activeScenes[sceneIndex];
     _activeScenes.erase(_activeScenes.begin() + sceneIndex);
     _activeScenes.insert(_activeScenes.begin() + inFrontSceneIndex, scene);
     if (sceneIndex == _activeScenes.size() - 1)
@@ -238,12 +238,12 @@ bool App::MoveSceneInFront(std::string name, std::string inFront)
     return true;
 }
 
-std::vector<Scene*> App::ActiveScenes()
+std::vector<zcom::Scene*> App::ActiveScenes()
 {
     return _activeScenes;
 }
 
-Scene* App::FindScene(std::string name)
+zcom::Scene* App::FindScene(std::string name)
 {
     for (auto scene : _scenes)
     {
@@ -255,7 +255,7 @@ Scene* App::FindScene(std::string name)
     return nullptr;
 }
 
-Scene* App::FindActiveScene(std::string name)
+zcom::Scene* App::FindActiveScene(std::string name)
 {
     for (auto scene : _activeScenes)
     {
@@ -367,7 +367,7 @@ void App::LoopThread()
             window.gfx.GetGraphics().target->Clear(D2D1::ColorF(0.3f, 0.3f, 0.3f));
             for (auto& scene : activeScenes)
             {
-                window.gfx.GetGraphics().target->DrawBitmap(scene->Image());
+                window.gfx.GetGraphics().target->DrawBitmap(scene->ContentImage());
             }
             window.gfx.GetGraphics().target->EndDraw();
         }
