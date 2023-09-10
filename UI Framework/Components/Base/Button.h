@@ -13,6 +13,7 @@ namespace zcom
     enum class ButtonPreset
     {
         NO_EFFECTS,
+        MINIMAL,
         DEFAULT
     };
 
@@ -188,7 +189,7 @@ namespace zcom
 
     private:
         bool _activated = false;
-        ButtonActivation _activation = ButtonActivation::PRESS;
+        ButtonActivation _activation = ButtonActivation::RELEASE;
         Event<void> _OnActivated;
 
         bool _hovered = false;
@@ -205,10 +206,11 @@ namespace zcom
         friend class Scene;
         friend class Component;
         Button(Scene* scene) : Component(scene) {}
-        void Init(std::wstring text = L"")
+        void Init(std::wstring text, ButtonPreset preset)
         {
             SetDefaultCursor(zwnd::CursorIcon::HAND);
             SetSelectable(true);
+
             _text = Create<Label>(text);
             _text->SetSize(GetWidth(), GetHeight());
             _text->SetHorizontalTextAlignment(TextAlignment::CENTER);
@@ -223,6 +225,21 @@ namespace zcom
             _imageClicked = Create<zcom::Image>();
             _imageClicked->SetSize(GetWidth(), GetHeight());
             _imageClicked->SetPlacement(ImagePlacement::FIT);
+
+            // Must be called after image components are initialized
+            SetPreset(preset);
+        }
+        void Init(std::wstring text)
+        {
+            Init(text, ButtonPreset::DEFAULT);
+        }
+        void Init(ButtonPreset preset)
+        {
+            Init(L"", preset);
+        }
+        void Init()
+        {
+            Init(L"", ButtonPreset::DEFAULT);
         }
     public:
         ~Button() {}
@@ -337,12 +354,22 @@ namespace zcom
                 SetButtonColorAll(D2D1::ColorF(0, 0.0f));
                 break;
             }
-            case ButtonPreset::DEFAULT:
+            case ButtonPreset::MINIMAL:
             {
                 SetButtonImageAll(nullptr);
                 SetButtonColor(D2D1::ColorF(0, 0.0f));
                 SetButtonHoverColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.1f));
                 SetButtonClickColor(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.1f));
+                break;
+            }
+            case ButtonPreset::DEFAULT:
+            {
+                SetButtonImageAll(nullptr);
+                SetButtonColor(D2D1::ColorF(0.05f, 0.05f, 0.05f));
+                SetButtonHoverColor(D2D1::ColorF(0.1f, 0.1f, 0.1f));
+                SetButtonClickColor(D2D1::ColorF(0.02f, 0.02f, 0.02f));
+                SetBorderVisibility(true);
+                SetBorderColor(D2D1::ColorF(0.2f, 0.2f, 0.2f));
                 break;
             }
             default:

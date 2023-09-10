@@ -38,7 +38,7 @@ void zcom::DefaultTitleBarScene::SetBackground(D2D1_COLOR_F color)
 
 void zcom::DefaultTitleBarScene::AddCloseButton()
 {
-    _closeButton = Create<Button>();
+    _closeButton = Create<Button>(ButtonPreset::NO_EFFECTS);
     _closeButton->SetBaseSize(45, 29);
     _closeButton->SetHorizontalAlignment(Alignment::END);
     _closeButton->SetButtonImageAll(_window->resourceManager.GetImage("window_close"));
@@ -46,8 +46,8 @@ void zcom::DefaultTitleBarScene::AddCloseButton()
     _closeButton->ButtonImage()->SetPixelSnap(true);
     _closeButton->UseImageParamsForAll(_closeButton->ButtonImage());
     _closeButton->SetButtonColor(D2D1::ColorF(0, 0.0f));
-    _closeButton->SetButtonHoverColor(D2D1::ColorF(/* #E81123 */ 15208739));
-    _closeButton->SetButtonClickColor(D2D1::ColorF(/* #E81123 */ 15208739, 0.54f));
+    _closeButton->SetButtonHoverColor(D2D1::ColorF(0xE81123));
+    _closeButton->SetButtonClickColor(D2D1::ColorF(0xE81123, 0.54f));
     _closeButton->ButtonImage()->SetTintColor(D2D1::ColorF(0));
     _closeButton->ButtonHoverImage()->SetTintColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
     _closeButton->ButtonClickImage()->SetTintColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
@@ -61,7 +61,7 @@ void zcom::DefaultTitleBarScene::AddCloseButton()
 
 void zcom::DefaultTitleBarScene::AddMaximizeButton()
 {
-    _maximizeButton = Create<Button>();
+    _maximizeButton = Create<Button>(ButtonPreset::NO_EFFECTS);
     _maximizeButton->SetBaseSize(45, 29);
     _maximizeButton->SetHorizontalAlignment(Alignment::END);
     if (_closeButton)
@@ -87,7 +87,7 @@ void zcom::DefaultTitleBarScene::AddMaximizeButton()
 
 void zcom::DefaultTitleBarScene::AddMinimizeButton()
 {
-    _minimizeButton = Create<Button>();
+    _minimizeButton = Create<Button>(ButtonPreset::NO_EFFECTS);
     _minimizeButton->SetBaseSize(45, 29);
     _minimizeButton->SetHorizontalAlignment(Alignment::END);
     if (_closeButton && _maximizeButton)
