@@ -35,7 +35,10 @@ void zcom::EntryScene::_Init(const SceneOptionsBase* options)
 
     _button = Create<Button>(L"Entry");
     _button->SetBaseSize(100, 40);
-    _button->SetOffsetPixels(150, 120);
+    _button->SetAlignment(Alignment::CENTER, Alignment::CENTER);
+    _button->SetOnActivated([&]() {
+        _window->Fullscreen(!_window->Fullscreen());
+    });
 
     _canvas->AddComponent(_button.get());
     //_canvas->AddComponent(_background.get());

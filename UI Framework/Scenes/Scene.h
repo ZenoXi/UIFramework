@@ -28,6 +28,7 @@ namespace zcom
         bool windowMaximized = false;
         bool windowMinimized = false;
         bool windowRestored = false;
+        bool windowFullscreened = false;
     };
 
     // Options for switching scenes

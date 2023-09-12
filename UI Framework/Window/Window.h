@@ -117,7 +117,6 @@ namespace zwnd
         bool Closed() const { return _closed && !_window; }
 
     public: // Managers
-        MouseManager mouseManager;
         KeyboardManager keyboardManager;
         ResourceManager resourceManager;
 
@@ -144,7 +143,11 @@ namespace zwnd
         bool _sceneChanged = true;
 
     private: // Fullscreen
+        // In fullscreen mode title bar and non client area is not drawn
+        // and the window is placed into windowed borderless state
         bool _fullscreen = false;
+        bool _fullscreenTargetValue = false;
+        bool _fullscreenChanged = false;
 
     private: // Window message handling
         void _HandleMessage(WindowMessage msg);

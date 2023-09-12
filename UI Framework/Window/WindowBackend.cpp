@@ -4,6 +4,7 @@
 
 #include <dwmapi.h>
 #pragma comment( lib,"Dwmapi.lib" )
+#include <hidusage.h>
 
 //BOOL CALLBACK enum_windows_callback(HWND handle, LPARAM lParam)
 //{
@@ -70,14 +71,16 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props) : _h
     // Create and show window
     _hwnd = CreateWindowEx(
         WS_EX_LAYERED,
-        //NULL,
+        //WS_EX_APPWINDOW,
         _wndClassName,
         nullptr,
         // WS_THICKFRAME: adds the automatic sizing border
         // WS_SYSMENU: required to show the window in the taskbar
         // WS_MAXIMIZEBOX: enables Aero snapping and the maximize option in the window menu
         // WS_MINIMIZEBOX: enables the minimize option in the window menu
-        WS_THICKFRAME | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX,
+        // WS_CAPTION: automatic window region updating
+        WS_THICKFRAME | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION,
+        //WS_POPUP,
         x, y, w, h,
         NULL,
         NULL,
@@ -92,7 +95,6 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props) : _h
 
     int showFlag = SW_SHOWNORMAL;
     ShowWindow(_hwnd, showFlag);
-    UpdateWindow(_hwnd);
 
     // Send resize message to UI
     WindowSizeMessage message;
@@ -217,22 +219,16 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
     {
         // TODO: investigate why app crashes on a mutex lock when WM_CREATE isn't handled
 
-        // find border thickness
-        SetRectEmpty(&_borderThickness);
-        if (GetWindowLongPtr(hWnd, GWL_STYLE) & WS_THICKFRAME)
-        {
-            AdjustWindowRectEx(&_borderThickness, GetWindowLongPtr(hWnd, GWL_STYLE) & ~WS_CAPTION, FALSE, NULL);
-            _borderThickness.left *= -1;
-            _borderThickness.top *= -1;
-        }
-        else if (GetWindowLongPtr(hWnd, GWL_STYLE) & WS_BORDER)
-        {
-            SetRect(&_borderThickness, 1, 1, 1, 1);
-        }
+        RAWINPUTDEVICE Rid[1];
+        Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+        Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+        Rid[0].dwFlags = RIDEV_INPUTSINK;
+        Rid[0].hwndTarget = hWnd;
+        RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
 
-        MARGINS margins = { 0 };
+        //MARGINS margins = { 0 };
         //DwmExtendFrameIntoClientArea(hWnd, &margins);
-        SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+        //SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
         break;
     }
     case WM_NCCALCSIZE:
@@ -360,6 +356,23 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         }
 
         return HTNOWHERE;
+    }
+    case WM_INPUT:
+    {
+        UINT dwSize = sizeof(RAWINPUT);
+        static BYTE lpb[sizeof(RAWINPUT)];
+
+        GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
+
+        RAWINPUT* raw = (RAWINPUT*)lpb;
+
+        if (raw->header.dwType == RIM_TYPEMOUSE)
+        {
+            int x = raw->data.mouse.lLastX;
+            int y = raw->data.mouse.lLastY;
+            std::cout << x << ":" << y << '\n';
+        }
+        break;
     }
     case WM_MOUSEMOVE:
     {
@@ -556,6 +569,10 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
     {
         int w = LOWORD(lParam);
         int h = HIWORD(lParam);
+        //std::cout << w << ":" << h << '\n';
+
+        if (_messageWidth == w && _messageHeight == h)
+            break;
 
         _messageWidth = w;
         _messageHeight = h;
@@ -591,12 +608,13 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
 
         gfx.ResizeBuffers(w, h, false);
 
-        _m_windowSize.unlock();
-
         _m_msg.lock();
         _msgQueue.push(message.Encode());
         _m_msg.unlock();
 
+        _m_windowSize.unlock();
+
+        return DefWindowProc(hWnd, msg, wParam, lParam);
         break;
     }
     case WM_KEYDOWN:
@@ -727,33 +745,40 @@ void zwnd::WindowBackend::HandleFullscreenChange()
             info.cbSize = sizeof(MONITORINFO);
             GetMonitorInfo(hMonitor, &info);
             RECT monitor = info.rcMonitor;
-
             int w = monitor.right - monitor.left;
             int h = monitor.bottom - monitor.top;
-            SetWindowLongPtr(_hwnd, GWL_STYLE, /*WS_VISIBLE |*/ WS_POPUP);
+
+            SetWindowLong(_hwnd, GWL_STYLE, WS_POPUP);
             SetWindowPos(_hwnd, HWND_TOP, monitor.left, monitor.top, w, h, SWP_FRAMECHANGED);
+            // Window region gets stuck on the non-fullscreen window size and prevents the window from rendering fullscreen
+            // This is somehow related to the window being a layered window
+            SetWindowRgn(_hwnd, NULL, FALSE);
 
             ShowWindow(_hwnd, SW_SHOW);
         }
         else
         {
-            //int x = _windowedRect.left;
-            //int y = _windowedRect.top;
-            //int w = _windowedRect.right - _windowedRect.left;
-            //int h = _windowedRect.bottom - _windowedRect.top;
             int x = _last2Moves[1].left;
             int y = _last2Moves[1].top;
             int w = _last2Moves[1].right - _last2Moves[1].left;
             int h = _last2Moves[1].bottom - _last2Moves[1].top;
-            SetWindowLongPtr(_hwnd, GWL_STYLE, WS_VISIBLE | WS_THICKFRAME | WS_SYSMENU);
+
+            // NOTE:
+            // SETTING WS_CAPTION IS MANDATORY!!!!!!
+            // Not setting the WS_CAPTION style leaves window region updating disabled for some reason
+            // and the window behavior remains similar to a popup window, with no animations when
+            // minimizing/maximizing and a dysfunctional taskbar icon
+            SetWindowLongPtr(_hwnd, GWL_STYLE, WS_THICKFRAME | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION);
             SetWindowPos(_hwnd, NULL, x, y, w, h, SWP_FRAMECHANGED);
+            
+            // NOTE:
+            // WS_DLGFRAME style is applied automatically to non-child windows
 
             if (_windowedMaximized)
                 ShowWindow(_hwnd, SW_SHOWMAXIMIZED);
             else
                 ShowWindow(_hwnd, SW_SHOW);
         }
-        //UpdateWindow(_hwnd);
     }
 }
 
@@ -885,24 +910,6 @@ void zwnd::WindowBackend::ResetScreenTimer()
     SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
 }
 
-void zwnd::WindowBackend::AddMouseHandler(MouseEventHandler* handler)
-{
-    _mouseHandlers.push_back(handler);
-}
-
-bool zwnd::WindowBackend::RemoveMouseHandler(MouseEventHandler* handler)
-{
-    for (auto it = _mouseHandlers.begin(); it != _mouseHandlers.end(); it++)
-    {
-        if (*it == handler)
-        {
-            _mouseHandlers.erase(it);
-            return true;
-        }
-    }
-    return false;
-}
-
 void zwnd::WindowBackend::AddKeyboardHandler(KeyboardEventHandler* handler)
 {
     _keyboardHandlers.push_back(handler);
@@ -1029,7 +1036,8 @@ void zwnd::WindowBackend::Restore()
 void zwnd::WindowBackend::SetFullscreen(bool fullscreen)
 {
     std::lock_guard<std::mutex> lock(_m_fullscreen);
-    if (_fullscreen == fullscreen) return;
+    if (_fullscreen == fullscreen)
+        return;
     _fullscreenChanged = true;
     _fullscreen = fullscreen;
 }

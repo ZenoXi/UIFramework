@@ -107,7 +107,6 @@ namespace zwnd
         RECT _borderThickness;
 
         // Handlers
-        std::vector<MouseEventHandler*> _mouseHandlers;
         std::vector<KeyboardEventHandler*> _keyboardHandlers;
         std::unique_ptr<FileDropHandler> _fileDropHandler;
 
@@ -134,8 +133,6 @@ namespace zwnd
         bool ProcessMessages();
         void ProcessQueueMessages(std::function<void(WindowMessage)> callback);
 
-        void AddMouseHandler(MouseEventHandler* handler);
-        bool RemoveMouseHandler(MouseEventHandler* handler);
         void AddKeyboardHandler(KeyboardEventHandler* handler);
         bool RemoveKeyboardHandler(KeyboardEventHandler* handler);
         void AddDragDropHandler(IDragDropEventHandler* handler);
@@ -260,8 +257,6 @@ namespace zwnd
         // Resets screen shutoff timer
         void ResetScreenTimer() { _wnd->ResetScreenTimer(); }
 
-        void AddMouseHandler(MouseEventHandler* handler) { _wnd->AddMouseHandler(handler); }
-        bool RemoveMouseHandler(MouseEventHandler* handler) { return _wnd->RemoveMouseHandler(handler); }
         void AddKeyboardHandler(KeyboardEventHandler* handler) { _wnd->AddKeyboardHandler(handler); }
         bool RemoveKeyboardHandler(KeyboardEventHandler* handler) { return _wnd->RemoveKeyboardHandler(handler); }
         void AddDragDropHandler(IDragDropEventHandler* handler) { _wnd->AddDragDropHandler(handler); }

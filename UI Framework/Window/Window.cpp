@@ -28,23 +28,12 @@ zwnd::Window::~Window()
 
 void zwnd::Window::Fullscreen(bool fullscreen)
 {
-    if (fullscreen == _fullscreen)
+    if (fullscreen == _fullscreenTargetValue)
         return;
 
-    _fullscreen = fullscreen;
-    if (_fullscreen)
-    {
-        mouseManager.SetTopMenuVisibility(false);
-        _window->SetFullscreen(true);
-        _sceneChanged = true;
-    }
-    else
-    {
-        mouseManager.SetTopMenuVisibility(true);
-        _window->SetFullscreen(false);
-        _sceneChanged = true;
-    }
-
+    _fullscreenTargetValue = fullscreen;
+    _fullscreenChanged = true;
+    _window->SetFullscreen(_fullscreenTargetValue);
 }
 
 void zwnd::Window::_UninitScene(std::string name)
@@ -217,7 +206,6 @@ void zwnd::Window::_MessageThread()
     while (!_scenesInited);
 
     // Add handlers
-    _window->AddMouseHandler(&mouseManager);
     _window->AddKeyboardHandler(&keyboardManager);
 
     // Start UI thread
@@ -289,13 +277,13 @@ void zwnd::Window::_UIThread()
 
     while (true)
     {
+        _window->LockSize();
+
         _windowSizeMessage = std::nullopt;
         _window->ProcessQueueMessages([&](WindowMessage msg) { Window::_HandleMessage(msg); });
 
         ztime::clock[CLOCK_GAME].Update();
         ztime::clock[CLOCK_MAIN].Update();
-
-        _window->LockSize();
 
         // Check for resize
         if (_windowSizeMessage.has_value())
@@ -308,13 +296,34 @@ void zwnd::Window::_UIThread()
             resizeInfo.windowRestored = _windowSizeMessage->restored;
             RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
 
+            // Handle fullscreen change
+            if (_fullscreenChanged)
+            {
+                if (_fullscreenTargetValue)
+                    resizeInfo.windowFullscreened = true;
+                else if (_window->Maximized())
+                    resizeInfo.windowMaximized = true;
+                else if (_window->Minimized())
+                    resizeInfo.windowMinimized = true;
+                else
+                    resizeInfo.windowRestored = true;
+
+                _fullscreen = _fullscreenTargetValue;
+                _fullscreenChanged = false;
+            }
+
             // Resize regular scenes
             for (auto& scene : _activeScenes)
-                scene->Resize(
-                    newWidth - clientAreaMargins.left - clientAreaMargins.right,
-                    newHeight - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarHeight(),
-                    resizeInfo
-                );
+            {
+                if (!_fullscreen)
+                    scene->Resize(
+                        newWidth - clientAreaMargins.left - clientAreaMargins.right,
+                        newHeight - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarHeight(),
+                        resizeInfo
+                    );
+                else
+                    scene->Resize(newWidth, newHeight, resizeInfo);
+            }
             // Resize title bar scene
             ((zcom::Scene*)_titleBarScene.get())->Resize(
                 newWidth - clientAreaMargins.left - clientAreaMargins.right,
@@ -364,10 +373,10 @@ void zwnd::Window::_UIThread()
                 }
             }
             // Check for title scene redraw
-            if (((zcom::Scene*)_titleBarScene.get())->Redraw())
+            if (((zcom::Scene*)_titleBarScene.get())->Redraw() && !_fullscreen)
                 redraw = true;
             // Check for non-client area scene redraw
-            if (((zcom::Scene*)_nonClientAreaScene.get())->Redraw())
+            if (((zcom::Scene*)_nonClientAreaScene.get())->Redraw() && !_fullscreen)
                 redraw = true;
         }
 
@@ -375,7 +384,7 @@ void zwnd::Window::_UIThread()
         //redraw = true;
         if (redraw)
         {
-            std::cout << "Redrawn (" << framecounter++ << ")\n";
+            //std::cout << "Redrawn (" << framecounter++ << ")\n";
             Graphics g = _window->gfx.GetGraphics();
             g.target->BeginDraw();
             g.target->Clear();
@@ -385,6 +394,13 @@ void zwnd::Window::_UIThread()
                 (float)_window->GetWidth() - (clientAreaMargins.left + clientAreaMargins.right),
                 (float)_window->GetHeight() - (clientAreaMargins.top + clientAreaMargins.bottom)
             };
+            if (_fullscreen)
+            {
+                clientSize = {
+                    (float)_window->GetWidth(),
+                    (float)_window->GetHeight()
+                };
+            }
 
             // Create bitmap for client area rendering
             ID2D1Bitmap1* clientAreaBitmap = nullptr;
@@ -405,10 +421,13 @@ void zwnd::Window::_UIThread()
             g.target->SetTarget(clientAreaBitmap);
             g.target->Clear();
 
-            // Draw the title bar scene
-            if (((zcom::Scene*)_titleBarScene.get())->Redraw())
-                ((zcom::Scene*)_titleBarScene.get())->Draw(g);
-            g.target->DrawBitmap(((zcom::Scene*)_titleBarScene.get())->ContentImage());
+            if (!_fullscreen)
+            {
+                // Draw the title bar scene
+                if (((zcom::Scene*)_titleBarScene.get())->Redraw())
+                    ((zcom::Scene*)_titleBarScene.get())->Draw(g);
+                g.target->DrawBitmap(((zcom::Scene*)_titleBarScene.get())->ContentImage());
+            }
 
             // Draw other scenes
             for (auto& scene : activeScenes)
@@ -419,7 +438,7 @@ void zwnd::Window::_UIThread()
                     scene->ContentImage(),
                     D2D1::RectF(
                         0.0f,
-                        _titleBarScene->TitleBarHeight(),
+                        _fullscreen ? 0.0f : _titleBarScene->TitleBarHeight(),
                         g.target->GetSize().width,
                         g.target->GetSize().height
                     )
@@ -430,12 +449,21 @@ void zwnd::Window::_UIThread()
             g.target->SetTarget(stash);
             stash->Release();
 
-            // Draw non-client area scene
-            _nonClientAreaScene->SetClientAreaBitmap(clientAreaBitmap);
-            ((zcom::Scene*)_nonClientAreaScene.get())->Draw(g);
+            if (!_fullscreen)
+            {
+                // Draw non-client area scene
+                _nonClientAreaScene->SetClientAreaBitmap(clientAreaBitmap);
+                ((zcom::Scene*)_nonClientAreaScene.get())->Draw(g);
 
-            g.target->DrawBitmap(((zcom::Scene*)_nonClientAreaScene.get())->ContentImage());
-            clientAreaBitmap->Release();
+                g.target->DrawBitmap(((zcom::Scene*)_nonClientAreaScene.get())->ContentImage());
+                clientAreaBitmap->Release();
+            }
+            else
+            {
+                // Draw client area
+                g.target->DrawBitmap(clientAreaBitmap);
+                clientAreaBitmap->Release();
+            }
 
             if (GetKeyState(VK_SPACE) & 0x8000)
                 g.target->Clear(D2D1::ColorF(0.2f, 0.2f, 0.2f, 0.8f));
@@ -467,6 +495,7 @@ void zwnd::Window::_UIThread()
             }
 
             // Update layered window
+            //std::cout << "TARGET SIZE: " << g.target->GetSize().width << ":" << g.target->GetSize().height << '\n';
             _window->UpdateLayeredWindow();
 
             HRESULT hr = g.target->EndDraw();
@@ -503,30 +532,41 @@ void zwnd::Window::_UIThread()
 
 void zwnd::Window::_PassParamsToHitTest()
 {
-
-    _window->SetResizingBorderMargins(_nonClientAreaScene->GetResizingBorderWidths());
-    RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
-    _window->SetClientAreaMargins(clientAreaMargins);
-    _window->SetTitleBarHeight(_titleBarScene->TitleBarHeight());
-
-    RECT windowMenuButtonRect = _titleBarScene->WindowMenuButtonRect();
-    // Transform rect to window coordinates
-    windowMenuButtonRect.left += clientAreaMargins.left;
-    windowMenuButtonRect.right += clientAreaMargins.left;
-    windowMenuButtonRect.top += clientAreaMargins.top;
-    windowMenuButtonRect.bottom += clientAreaMargins.top;
-    _window->SetWinMenuButtonRect(windowMenuButtonRect);
-
-    std::vector<RECT> excludedRects = _titleBarScene->ExcludedCaptionRects();
-    // Transform rects to window coordinates
-    for (auto& rect : excludedRects)
+    if (!_fullscreen)
     {
-        rect.left += clientAreaMargins.left;
-        rect.right += clientAreaMargins.left;
-        rect.top += clientAreaMargins.top;
-        rect.bottom += clientAreaMargins.top;
+        _window->SetResizingBorderMargins(_nonClientAreaScene->GetResizingBorderWidths());
+        RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
+        _window->SetClientAreaMargins(clientAreaMargins);
+        _window->SetTitleBarHeight(_titleBarScene->TitleBarHeight());
+
+        RECT windowMenuButtonRect = _titleBarScene->WindowMenuButtonRect();
+        // Transform rect to window coordinates
+        windowMenuButtonRect.left += clientAreaMargins.left;
+        windowMenuButtonRect.right += clientAreaMargins.left;
+        windowMenuButtonRect.top += clientAreaMargins.top;
+        windowMenuButtonRect.bottom += clientAreaMargins.top;
+        _window->SetWinMenuButtonRect(windowMenuButtonRect);
+
+        std::vector<RECT> excludedRects = _titleBarScene->ExcludedCaptionRects();
+        // Transform rects to window coordinates
+        for (auto& rect : excludedRects)
+        {
+            rect.left += clientAreaMargins.left;
+            rect.right += clientAreaMargins.left;
+            rect.top += clientAreaMargins.top;
+            rect.bottom += clientAreaMargins.top;
+        }
+        _window->SetExcludedCaptionRects(excludedRects);
     }
-    _window->SetExcludedCaptionRects(excludedRects);
+    else
+    {
+        RECT nullRect = { 0, 0, 0, 0 };
+        _window->SetResizingBorderMargins(nullRect);
+        _window->SetClientAreaMargins(nullRect);
+        _window->SetTitleBarHeight(0);
+        _window->SetWinMenuButtonRect(nullRect);
+        _window->SetExcludedCaptionRects({});
+    }
 }
 
 std::unique_ptr<zcom::Panel> zwnd::Window::_BuildMasterPanel()
@@ -536,6 +576,7 @@ std::unique_ptr<zcom::Panel> zwnd::Window::_BuildMasterPanel()
     std::unique_ptr<zcom::Panel> masterPanel = _nonClientAreaScene->CreatePanel();
     masterPanel->Resize(Width(), Height());
     masterPanel->DeferLayoutUpdates();
+    if (!_fullscreen)
     {
         zcom::Panel* panel = _nonClientAreaScene->GetCanvas()->BasePanel();
         panel->SetX(0);
@@ -545,10 +586,19 @@ std::unique_ptr<zcom::Panel> zwnd::Window::_BuildMasterPanel()
     for (auto& scene : _activeScenes)
     {
         zcom::Panel* panel = scene->GetCanvas()->BasePanel();
-        panel->SetX(margins.left);
-        panel->SetY(margins.top + _titleBarScene->TitleBarHeight());
+        if (!_fullscreen)
+        {
+            panel->SetX(margins.left);
+            panel->SetY(margins.top + _titleBarScene->TitleBarHeight());
+        }
+        else
+        {
+            panel->SetX(0);
+            panel->SetY(0);
+        }
         masterPanel->AddItem(panel);
     }
+    if (!_fullscreen)
     {
         zcom::Panel* panel = _titleBarScene->GetCanvas()->BasePanel();
         panel->SetX(margins.left);

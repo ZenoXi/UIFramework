@@ -13,6 +13,7 @@ RECT zcom::DefaultNonClientAreaScene::GetResizingBorderWidths()
 
 RECT zcom::DefaultNonClientAreaScene::GetClientAreaMargins()
 {
+    // TODO: These don't work when maximizing a window
     return { 7, 7, 7, 7 };
 }
 
