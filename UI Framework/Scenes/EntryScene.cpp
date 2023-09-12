@@ -46,6 +46,21 @@ void zcom::EntryScene::_Init(const SceneOptionsBase* options)
     //_canvas->AddComponent(_testPanel.get());
     _canvas->SetBackgroundColor(D2D1::ColorF(0, 0.0f));
     _canvas->SetOcclusive(false);
+    _canvas->BasePanel()->AddOnMouseMove([](Component* item, int, int) {
+        item->InvokeRedraw();
+    });
+    _canvas->BasePanel()->AddPostDraw([](Component* item, Graphics g) {
+        D2D1_RECT_F rect = D2D1::RectF(
+            item->GetMousePosX() - 5.0f,
+            item->GetMousePosY() - 5.0f,
+            item->GetMousePosX() + 5.0f,
+            item->GetMousePosY() + 5.0f
+        );
+        ID2D1SolidColorBrush* brush;
+        g.target->CreateSolidColorBrush(D2D1::ColorF(0xFF0000), &brush);
+        g.target->FillRectangle(rect, brush);
+        brush->Release();
+    });
     //_canvas->SetBackgroundColor(D2D1::ColorF(0.0f, 0.0f, 0.0f));
 }
 

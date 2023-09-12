@@ -234,6 +234,8 @@ namespace zcom
         Event<void, Component*, int, int> _onWheelDown;
         Event<void, Component*, bool> _onSelected;
         Event<void, Component*> _onDeselected;
+        Event<void, Component*, Graphics> _onDraw;
+
         // Post default handling
         Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postMouseMove;
         Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postLeftPressed;
@@ -242,6 +244,7 @@ namespace zcom
         Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postRightReleased;
         Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postWheelUp;
         Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postWheelDown;
+        Event<void, Component*, Graphics> _postDraw;
 
         // Layout events
         Event<void> _onLayoutChanged;
@@ -919,6 +922,10 @@ namespace zcom
         {
             _onDeselected.Add(handler, info);
         }
+        void AddOnDraw(std::function<void(Component*, Graphics)> handler, EventInfo info = { nullptr, "" })
+        {
+            _onDraw.Add(handler, info);
+        }
 
         void AddPostMouseMove(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
@@ -947,6 +954,10 @@ namespace zcom
         void AddPostWheelDown(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
         {
             _postWheelDown.Add(handler, info);
+        }
+        void AddPostDraw(std::function<void(Component*, Graphics)> handler, EventInfo info = { nullptr, "" })
+        {
+            _postDraw.Add(handler, info);
         }
 
         void RemoveOnMouseMove(EventInfo info = { nullptr, "" })
@@ -1001,6 +1012,10 @@ namespace zcom
         {
             _onDeselected.Remove(info);
         }
+        void RemoveOnDraw(EventInfo info = { nullptr, "" })
+        {
+            _onDraw.Remove(info);
+        }
 
         void RemovePostMouseMove(EventInfo info = { nullptr, "" })
         {
@@ -1029,6 +1044,10 @@ namespace zcom
         void RemovePostWheelDown(EventInfo info = { nullptr, "" })
         {
             _postWheelDown.Remove(info);
+        }
+        void RemovePostDraw(EventInfo info = { nullptr, "" })
+        {
+            _postDraw.Remove(info);
         }
 
         // Layout events
@@ -1098,6 +1117,9 @@ namespace zcom
 
             if (_visible)
             {
+                // Invoke pre draw handlers
+                _onDraw.InvokeAll(this, g);
+
                 ID2D1Image* stash = nullptr;
                 ID2D1Bitmap1* contentBitmap = nullptr;
                 const float rounding = _cornerRounding; // Use const value in this function in case '_cornerRouding' is modified
@@ -1268,6 +1290,9 @@ namespace zcom
                     grayscaleEffect->Release();
                     grayscaleBitmap->Release();
                 }
+
+                // Invoke post draw handlers
+                _postDraw.InvokeAll(this, g);
             }
             else if (_Redraw())
             {
