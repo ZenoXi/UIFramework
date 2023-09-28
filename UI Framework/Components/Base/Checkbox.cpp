@@ -1,5 +1,7 @@
 #include "Checkbox.h"
 #include "App.h"
+#include "Scenes/Scene.h"
+#include "Window/Window.h"
 
 void zcom::Checkbox::Checked(bool checked)
 {
@@ -96,10 +98,10 @@ bool zcom::Checkbox::_OnKeyDown(BYTE vkCode)
 
 void zcom::Checkbox::_OnSelected(bool reverse)
 {
-    App::Instance()->keyboardManager.SetExclusiveHandler(this);
+    _scene->GetWindow()->keyboardManager.SetExclusiveHandler(this);
 }
 
 void zcom::Checkbox::_OnDeselected()
 {
-    App::Instance()->keyboardManager.ResetExclusiveHandler();
+    _scene->GetWindow()->keyboardManager.ResetExclusiveHandler();
 }

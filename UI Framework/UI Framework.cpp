@@ -74,74 +74,81 @@ int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
     // Init appropriate scenes
     //App::Instance()->InitScene(EntryScene::StaticName(), nullptr);
 
-    zwnd::Window wnd1 = zwnd::Window(App::Instance(), zwnd::WindowProperties{ L"wndClass1", 0, 1280, 720 }, hInst, [](zwnd::Window* wnd)
-    {
-        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
-        wnd->resourceManager.InitAllImages();
-        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
-        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
-        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
-        wnd->LoadStartingScene<zcom::TestScene>(nullptr);
-    });
+    App app(hInst);
 
-    //zwnd::Window wnd2 = zwnd::Window(App::Instance(), zwnd::WindowProperties{ L"Window 2", L"wndClass2", 0 }, hInst, [](zwnd::Window* wnd)
-    //{
-    //    wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
-    //    wnd->resourceManager.InitAllImages();
-    //    wnd->LoadNonClientAreaScene<DefaultNonClientAreaScene>(nullptr);
-    //    wnd->LoadTitleBarScene<DefaultTitleBarScene>(nullptr);
-    //    wnd->LoadStartingScene<EntryScene>(nullptr);
-    //});
+    //std::optional<zwnd::WindowId> id1 = app.CreateTopWindow(
+    //    zwnd::WindowProperties().WindowClassName(L"wndClass1").InitialSize(1280, 720).MainWindow(),
+    //    [](zwnd::Window* wnd)
+    //    {
+    //        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
+    //        wnd->resourceManager.InitAllImages();
+    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+    //        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
+    //        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
+    //        //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
+    //    }
+    //);
 
-    //zwnd::Window wnd3 = zwnd::Window(App::Instance(), zwnd::WindowProperties{ L"Window 3", L"wndClass3", 0 }, hInst, [](zwnd::Window* wnd)
-    //{
-    //    wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
-    //    wnd->resourceManager.InitAllImages();
-    //    wnd->LoadNonClientAreaScene<DefaultNonClientAreaScene>(nullptr);
-    //    wnd->LoadTitleBarScene<DefaultTitleBarScene>(nullptr);
-    //    wnd->LoadStartingScene<EntryScene>(nullptr);
-    //});
-    
-    Clock msgTimer = Clock(0);
+    std::optional<zwnd::WindowId> id2 = app.CreateTopWindow(
+        zwnd::WindowProperties().WindowClassName(L"wndClass2").InitialSize(720, 720).MainWindow(),
+        [](zwnd::Window* wnd)
+        {
+            wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
+            wnd->resourceManager.InitAllImages();
+            wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+            wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
+            wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
+            //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
+        }
+    );
 
-    // Start app thread
-    //App::Start();
+    std::optional<zwnd::WindowId> id3 = app.CreateToolWindow(
+        id2.value(),
+        zwnd::WindowProperties().WindowClassName(L"wndClass3").InitialSize(500, 500),
+        [](zwnd::Window* wnd)
+        {
+            wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
+            wnd->resourceManager.InitAllImages();
+            wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+            wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
+            wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
+            //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
+        }
+    );
 
-    // Main window loop
+    //std::optional<zwnd::WindowId> id4 = app.CreateChildWindow(
+    //    id2.value(),
+    //    zwnd::WindowProperties().WindowClassName(L"wndClass4").InitialSize(500, 500),
+    //    [](zwnd::Window* wnd)
+    //    {
+    //        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
+    //        wnd->resourceManager.InitAllImages();
+    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+    //        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
+    //        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
+    //        //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
+    //    }
+    //);
+
+    //std::optional<zwnd::WindowId> id3 = app.CreateTopWindow(
+    //    zwnd::WindowProperties().WindowClassName(L"wndClass3").InitialSize(500, 500),
+    //    [](zwnd::Window* wnd)
+    //    {
+    //        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
+    //        wnd->resourceManager.InitAllImages();
+    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+    //        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
+    //        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
+    //        //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
+    //    }
+    //);
+
     while (true)
     {
-        if (wnd1.Closed())
+        if (app.WindowsClosed())
             break;
-        //// Check for app exit
-        //if (App::Exited())
-        //    break;
 
-        //// Messages
-        //bool msgProcessed = window.ProcessMessages();
-
-        //window.HandleFullscreenChange();
-        //window.HandleCursorVisibility();
-
-        //// Limit cpu usage
-        //if (!msgProcessed)
-        //{
-        //    // If no messages are received for 50ms or more, sleep to limit cpu usage.
-        //    // This way we allow for full* mouse poll rate utilization when necessary.
-        //    //
-        //    // * the very first mouse move after a break will have a very small delay
-        //    // which may be noticeable in certain situations (FPS games)
-        //    msgTimer.Update();
-        //    if (msgTimer.Now().GetTime(MILLISECONDS) >= 50)
-        //        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        //}
-        //else
-        //{
-        //    msgTimer.Reset();
-        //}
-        //continue;
-
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     return 0;

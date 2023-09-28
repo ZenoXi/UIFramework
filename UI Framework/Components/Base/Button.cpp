@@ -1,12 +1,14 @@
 #include "Button.h"
 #include "App.h"
+#include "Scenes/Scene.h"
+#include "Window/Window.h"
 
 void zcom::Button::_OnSelected(bool reverse)
 {
-    App::Instance()->keyboardManager.SetExclusiveHandler(this);
+    _scene->GetWindow()->keyboardManager.SetExclusiveHandler(this);
 }
 
 void zcom::Button::_OnDeselected()
 {
-    App::Instance()->keyboardManager.ResetExclusiveHandler();
+    _scene->GetWindow()->keyboardManager.ResetExclusiveHandler();
 }

@@ -1,7 +1,16 @@
 #include "App.h"
 #include "Window.h"
 
-zwnd::Window::Window(App* app, WindowProperties props, HINSTANCE hinst, std::function<void(zwnd::Window* window)> initFunction)
+zwnd::Window::Window(
+    App* app,
+    WindowType type,
+    std::optional<WindowId> parentWindowId,
+    WindowProperties props,
+    HINSTANCE hinst,
+    std::function<void(Window* window)> initFunction,
+    std::function<void(Window* window)> onClosed
+)
+    : _id(WindowId::Generate()), _type(type), _parentId(parentWindowId), _onClosed(onClosed)
 {
     _app = app;
     _props = props;
@@ -11,19 +20,19 @@ zwnd::Window::Window(App* app, WindowProperties props, HINSTANCE hinst, std::fun
     _messageThread = std::thread(&Window::_MessageThread, this);
 
     // Wait for window to be created
-    while (!_windowCreated);
+    while (!_windowCreated.load());
 
     // Init resources and scenes
     initFunction(this);
 
-
-    _scenesInited = true;
+    _scenesInited.store(true);
 }
 
 zwnd::Window::~Window()
 {
-    _closed = true;
-    _messageThread.join();
+    _closed.store(true);
+    if (_messageThread.joinable())
+        _messageThread.join();
 }
 
 void zwnd::Window::Fullscreen(bool fullscreen)
@@ -96,7 +105,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == WindowCloseMessage::ID())
     {
-        _closed = true;
+        _closed.store(true);
     }
     else if (msg.id == MouseMoveMessage::ID())
     {
@@ -113,7 +122,8 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseLeaveMessage::ID())
     {
-        _titleBarScene->GetCanvas()->OnMouseLeave();
+        if (_TitleBarAvailable())
+            _titleBarScene->GetCanvas()->OnMouseLeave();
         _nonClientAreaScene->GetCanvas()->OnMouseLeave();
         for (auto& scene : _activeScenes)
             scene->GetCanvas()->OnMouseLeave();
@@ -195,15 +205,31 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
 void zwnd::Window::_MessageThread()
 {
     // Create window
-    _window = std::make_unique<WindowBackend>(_hinst, _props);
+    HWND parentWindow = NULL;
+    if (_parentId.has_value())
+    {
+        // When this is called, _app holds the lock in it's window creation function
+        Handle<Window> hwnd = _app->GetWindowNoLock(_parentId.value());
+        if (hwnd.Valid())
+        {
+            // TODO: Should add window locking, since the backend pointer can be released while in use
+
+            auto view = hwnd->Backend();
+            if (view.Valid())
+            {
+                parentWindow = view.WindowHandle();
+            }
+        }
+    }
+    _window = std::make_unique<WindowBackend>(_hinst, _props, parentWindow);
 
     // Pass the device context to the resource manager
     resourceManager.CoInit();
     resourceManager.SetDeviceContext(_window->gfx.GetGraphics().target);
 
     // Wait for scene and resource init
-    _windowCreated = true;
-    while (!_scenesInited);
+    _windowCreated.store(true);
+    while (!_scenesInited.load());
 
     // Add handlers
     _window->AddKeyboardHandler(&keyboardManager);
@@ -216,7 +242,7 @@ void zwnd::Window::_MessageThread()
     while (true)
     {
         // Check for window close
-        if (_closed)
+        if (_closed.load())
             break;
 
         // Messages
@@ -249,6 +275,7 @@ void zwnd::Window::_MessageThread()
     resourceManager.CoUninit();
 
     _window.reset();
+    _onClosed(this);
 }
 
 void zwnd::Window::_UIThread()
@@ -315,21 +342,24 @@ void zwnd::Window::_UIThread()
             // Resize regular scenes
             for (auto& scene : _activeScenes)
             {
-                if (!_fullscreen)
+                if (!_fullscreen && _TitleBarAvailable())
                     scene->Resize(
                         newWidth - clientAreaMargins.left - clientAreaMargins.right,
-                        newHeight - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarHeight(),
+                        newHeight - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarSceneHeight(),
                         resizeInfo
                     );
                 else
                     scene->Resize(newWidth, newHeight, resizeInfo);
             }
             // Resize title bar scene
-            ((zcom::Scene*)_titleBarScene.get())->Resize(
-                newWidth - clientAreaMargins.left - clientAreaMargins.right,
-                _titleBarScene->TitleBarHeight(),
-                resizeInfo
-            );
+            if (_TitleBarAvailable())
+            {
+                ((zcom::Scene*)_titleBarScene.get())->Resize(
+                    newWidth - clientAreaMargins.left - clientAreaMargins.right,
+                    _titleBarScene->TitleBarSceneHeight(),
+                    resizeInfo
+                );
+            }
             // Resize non-client area scene
             ((zcom::Scene*)_nonClientAreaScene.get())->Resize(newWidth, newHeight, resizeInfo);
         }
@@ -353,17 +383,14 @@ void zwnd::Window::_UIThread()
         auto activeScenes = Scenes();
 
         { // Updating scenes
-            // Update content scenes
             for (auto& scene : activeScenes)
                 scene->Update();
-            // Update the title bar scene
-            ((zcom::Scene*)_titleBarScene.get())->Update();
-            // Update the non-client area scene
+            if (_TitleBarAvailable())
+                ((zcom::Scene*)_titleBarScene.get())->Update();
             ((zcom::Scene*)_nonClientAreaScene.get())->Update();
         }
 
         { // Redraw checking
-            // Check for content scene redraw
             for (auto& scene : activeScenes)
             {
                 if (scene->Redraw())
@@ -372,11 +399,9 @@ void zwnd::Window::_UIThread()
                     break;
                 }
             }
-            // Check for title scene redraw
-            if (((zcom::Scene*)_titleBarScene.get())->Redraw() && !_fullscreen)
+            if (!_fullscreen && _TitleBarAvailable() && ((zcom::Scene*)_titleBarScene.get())->Redraw())
                 redraw = true;
-            // Check for non-client area scene redraw
-            if (((zcom::Scene*)_nonClientAreaScene.get())->Redraw() && !_fullscreen)
+            if (!_fullscreen && ((zcom::Scene*)_nonClientAreaScene.get())->Redraw())
                 redraw = true;
         }
 
@@ -384,7 +409,8 @@ void zwnd::Window::_UIThread()
         //redraw = true;
         if (redraw)
         {
-            //std::cout << "Redrawn (" << framecounter++ << ")\n";
+            //if (_parentId.has_value())
+            //    std::cout << "Redrawn (" << framecounter++ << ")\n";
             Graphics g = _window->gfx.GetGraphics();
             g.target->BeginDraw();
             g.target->Clear();
@@ -421,7 +447,7 @@ void zwnd::Window::_UIThread()
             g.target->SetTarget(clientAreaBitmap);
             g.target->Clear();
 
-            if (!_fullscreen)
+            if (!_fullscreen && _TitleBarAvailable())
             {
                 // Draw the title bar scene
                 if (((zcom::Scene*)_titleBarScene.get())->Redraw())
@@ -438,7 +464,7 @@ void zwnd::Window::_UIThread()
                     scene->ContentImage(),
                     D2D1::RectF(
                         0.0f,
-                        _fullscreen ? 0.0f : _titleBarScene->TitleBarHeight(),
+                        (_fullscreen || !_TitleBarAvailable()) ? 0.0f : _titleBarScene->TitleBarSceneHeight(),
                         g.target->GetSize().width,
                         g.target->GetSize().height
                     )
@@ -495,11 +521,9 @@ void zwnd::Window::_UIThread()
             }
 
             // Update layered window
-            //std::cout << "TARGET SIZE: " << g.target->GetSize().width << ":" << g.target->GetSize().height << '\n';
             _window->UpdateLayeredWindow();
 
-            HRESULT hr = g.target->EndDraw();
-            int thing = 5;
+            g.target->EndDraw();
         }
 
         _window->UnlockSize();
@@ -513,15 +537,18 @@ void zwnd::Window::_UIThread()
 
         _window->gfx.EndFrame(redraw);
 
-        if (_closed)
+        if (_closed.load())
             break;
     }
 
     for (auto& scene : _activeScenes)
         scene->Uninit();
     _activeScenes.clear();
-    ((zcom::Scene*)_titleBarScene.get())->Uninit();
-    _titleBarScene.reset();
+    if (_titleBarScene)
+    {
+        ((zcom::Scene*)_titleBarScene.get())->Uninit();
+        _titleBarScene.reset();
+    }
     ((zcom::Scene*)_nonClientAreaScene.get())->Uninit();
     _nonClientAreaScene.reset();
 
@@ -534,36 +561,44 @@ void zwnd::Window::_PassParamsToHitTest()
 {
     if (!_fullscreen)
     {
-        _window->SetResizingBorderMargins(_nonClientAreaScene->GetResizingBorderWidths());
+        if (_type == WindowType::TOOL)
+            _window->SetResizingBorderMargins({0, 0, 0, 0});
+        else
+            _window->SetResizingBorderMargins(_nonClientAreaScene->GetResizingBorderWidths());
+
         RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
         _window->SetClientAreaMargins(clientAreaMargins);
-        _window->SetTitleBarHeight(_titleBarScene->TitleBarHeight());
 
-        RECT windowMenuButtonRect = _titleBarScene->WindowMenuButtonRect();
-        // Transform rect to window coordinates
-        windowMenuButtonRect.left += clientAreaMargins.left;
-        windowMenuButtonRect.right += clientAreaMargins.left;
-        windowMenuButtonRect.top += clientAreaMargins.top;
-        windowMenuButtonRect.bottom += clientAreaMargins.top;
-        _window->SetWinMenuButtonRect(windowMenuButtonRect);
-
-        std::vector<RECT> excludedRects = _titleBarScene->ExcludedCaptionRects();
-        // Transform rects to window coordinates
-        for (auto& rect : excludedRects)
+        if (_TitleBarAvailable())
         {
-            rect.left += clientAreaMargins.left;
-            rect.right += clientAreaMargins.left;
-            rect.top += clientAreaMargins.top;
-            rect.bottom += clientAreaMargins.top;
+            _window->SetCaptionHeight(_titleBarScene->CaptionHeight());
+
+            RECT windowMenuButtonRect = _titleBarScene->WindowMenuButtonRect();
+            // Transform rect to window coordinates
+            windowMenuButtonRect.left += clientAreaMargins.left;
+            windowMenuButtonRect.right += clientAreaMargins.left;
+            windowMenuButtonRect.top += clientAreaMargins.top;
+            windowMenuButtonRect.bottom += clientAreaMargins.top;
+            _window->SetWinMenuButtonRect(windowMenuButtonRect);
+
+            std::vector<RECT> excludedRects = _titleBarScene->ExcludedCaptionRects();
+            // Transform rects to window coordinates
+            for (auto& rect : excludedRects)
+            {
+                rect.left += clientAreaMargins.left;
+                rect.right += clientAreaMargins.left;
+                rect.top += clientAreaMargins.top;
+                rect.bottom += clientAreaMargins.top;
+            }
+            _window->SetExcludedCaptionRects(excludedRects);
         }
-        _window->SetExcludedCaptionRects(excludedRects);
     }
     else
     {
         RECT nullRect = { 0, 0, 0, 0 };
         _window->SetResizingBorderMargins(nullRect);
         _window->SetClientAreaMargins(nullRect);
-        _window->SetTitleBarHeight(0);
+        _window->SetCaptionHeight(0);
         _window->SetWinMenuButtonRect(nullRect);
         _window->SetExcludedCaptionRects({});
     }
@@ -586,10 +621,10 @@ std::unique_ptr<zcom::Panel> zwnd::Window::_BuildMasterPanel()
     for (auto& scene : _activeScenes)
     {
         zcom::Panel* panel = scene->GetCanvas()->BasePanel();
-        if (!_fullscreen)
+        if (!_fullscreen && _TitleBarAvailable())
         {
             panel->SetX(margins.left);
-            panel->SetY(margins.top + _titleBarScene->TitleBarHeight());
+            panel->SetY(margins.top + _titleBarScene->TitleBarSceneHeight());
         }
         else
         {
@@ -598,7 +633,7 @@ std::unique_ptr<zcom::Panel> zwnd::Window::_BuildMasterPanel()
         }
         masterPanel->AddItem(panel);
     }
-    if (!_fullscreen)
+    if (!_fullscreen && _TitleBarAvailable())
     {
         zcom::Panel* panel = _titleBarScene->GetCanvas()->BasePanel();
         panel->SetX(margins.left);
@@ -610,4 +645,9 @@ std::unique_ptr<zcom::Panel> zwnd::Window::_BuildMasterPanel()
     masterPanel->ResumeLayoutUpdates(false);
 
     return masterPanel;
+}
+
+bool zwnd::Window::_TitleBarAvailable()
+{
+    return _titleBarScene && _type != WindowType::TOOL;
 }

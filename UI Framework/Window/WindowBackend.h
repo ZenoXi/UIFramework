@@ -75,7 +75,7 @@ namespace zwnd
             if (res == 0)
             {
                 //std::cout << "LAYERED WINDOW UPDATE ERROR " << _info.psize->cx << ':' << _info.psize->cy << " vs " << GetWidth() << ':' << GetHeight() << '\n';
-                std::cout << "LAYERED WINDOW UPDATE ERROR\n";
+                //std::cout << "LAYERED WINDOW UPDATE ERROR\n";
             }
         }
 
@@ -94,7 +94,8 @@ namespace zwnd
 
     class WindowBackend
     {
-        HWND _hwnd = nullptr;
+        HWND _hwnd = NULL;
+        HWND _parentHwnd = NULL;
         LayeredWindowInfo _linfo;
 
         LPCWSTR _wndClassName = L"wndClassName";
@@ -113,7 +114,7 @@ namespace zwnd
     public:
         WindowGraphics gfx;
 
-        WindowBackend(HINSTANCE hInst, WindowProperties props);
+        WindowBackend(HINSTANCE hInst, WindowProperties props, HWND parentWindow);
         WindowBackend(const WindowBackend&) = delete;
         WindowBackend& operator=(const WindowBackend&) = delete;
         ~WindowBackend();
@@ -169,7 +170,7 @@ namespace zwnd
 
         void SetResizingBorderMargins(RECT margins);
         void SetClientAreaMargins(RECT margins);
-        void SetTitleBarHeight(int height);
+        void SetCaptionHeight(int height);
         void SetCloseButtonRect(RECT rect);
         void SetMinimizeButtonRect(RECT rect);
         void SetMaximizeButtonRect(RECT rect);
@@ -227,6 +228,7 @@ namespace zwnd
     public:
         WindowBackendView(WindowBackend* wnd) : _wnd(wnd) {}
 
+        bool Valid() { return _wnd != nullptr; }
         // Returns the window handle
         // Only use if you know what you're doing
         HWND WindowHandle() { return _wnd->GetHWND(); }

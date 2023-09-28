@@ -145,7 +145,12 @@ void zcom::DefaultTitleBarScene::AddMenuButton(std::wstring name)
 
 }
 
-int zcom::DefaultTitleBarScene::TitleBarHeight()
+int zcom::DefaultTitleBarScene::TitleBarSceneHeight()
+{
+    return 30;
+}
+
+int zcom::DefaultTitleBarScene::CaptionHeight()
 {
     return 30;
 }

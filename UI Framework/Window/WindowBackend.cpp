@@ -25,7 +25,7 @@
 //    return TRUE;
 //}
 
-zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props) : _hInst(hInst), _wndClassName(props.windowClassName.c_str())
+zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND parentWindow) : _hInst(hInst), _parentHwnd(parentWindow), _wndClassName(props.windowClassName.c_str())
 {
     _linfo.SetWidth(props.initialWidth);
     _linfo.SetHeight(props.initialHeight);
@@ -71,7 +71,7 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props) : _h
     // Create and show window
     _hwnd = CreateWindowEx(
         WS_EX_LAYERED,
-        //WS_EX_APPWINDOW,
+        //NULL,
         _wndClassName,
         nullptr,
         // WS_THICKFRAME: adds the automatic sizing border
@@ -82,7 +82,7 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props) : _h
         WS_THICKFRAME | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION,
         //WS_POPUP,
         x, y, w, h,
-        NULL,
+        parentWindow,
         NULL,
         hInst,
         this
@@ -168,9 +168,18 @@ bool zwnd::WindowBackend::ProcessMessages()
 
 void zwnd::WindowBackend::ProcessQueueMessages(std::function<void(WindowMessage)> callback)
 {
+    static int counter1 = 0;
+    static int counter2 = 0;
+
+    //if (_parentHwnd)
+    //    std::cout << "Processing outer.. " << counter1++ << "\n";
+
     std::lock_guard<std::mutex> lock(_m_msg);
     while (!_msgQueue.empty())
     {
+    //    if (_parentHwnd)
+    //        std::cout << "Processing inner.. " << counter2++ << "\n";
+
         callback(_msgQueue.front());
         //HandleMsgFromQueue(_msgQueue.front());
         _msgQueue.pop();
@@ -206,6 +215,10 @@ LRESULT WINAPI zwnd::WindowBackend::_HandleMsgThunk(HWND hWnd, UINT msg, WPARAM 
 
 LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    static int counter = 0;
+    //if (_parentHwnd != NULL)
+    //    std::cout << msg << '\n';
+
     switch (msg)
     {
     case WM_CLOSE:
@@ -230,6 +243,18 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         //DwmExtendFrameIntoClientArea(hWnd, &margins);
         //SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
         break;
+    }
+    case WM_NCACTIVATE:
+    {
+        // DefWindowProc for this message causes a short but very noticeable freeze in the message pipeline
+        // when a window has owned windows or is an owned window.
+        // Microsoft documentation states that the function "draws the title bar or icon title in its active
+        // colors when the wParam parameter is TRUE and in its inactive colors when wParam is FALSE".
+        // I can't say why this behavior occurs, but since the title bar is custom drawn, the default processing
+        // for this message is unnecessary.
+
+        // Return FALSE explicitly, since returning TRUE would result in default processing
+        return FALSE;
     }
     case WM_NCCALCSIZE:
     {
@@ -370,7 +395,7 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         {
             int x = raw->data.mouse.lLastX;
             int y = raw->data.mouse.lLastY;
-            std::cout << x << ":" << y << '\n';
+            //std::cout << x << ":" << y << '\n';
         }
         break;
     }
@@ -1059,7 +1084,7 @@ void zwnd::WindowBackend::SetClientAreaMargins(RECT margins)
     _clientAreaMargins = margins;
 }
 
-void zwnd::WindowBackend::SetTitleBarHeight(int height)
+void zwnd::WindowBackend::SetCaptionHeight(int height)
 {
     std::lock_guard<std::mutex> lock(_m_hittest);
     _titleBarHeight = height;

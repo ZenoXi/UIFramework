@@ -201,6 +201,7 @@
     <ClInclude Include="D2DEffects\TintEffect.h" />
     <ClInclude Include="Helper\decimal.h" />
     <ClInclude Include="Helper\Event.h" />
+    <ClInclude Include="Helper\Handle.h" />
     <ClInclude Include="Helper\StringHelper.h" />
     <ClInclude Include="Helper\Time.h" />
     <ClInclude Include="Helper\ResourceManager.h" />
@@ -218,6 +219,7 @@
     <ClInclude Include="Window\Window.h" />
     <ClInclude Include="Window\WindowBackend.h" />
     <ClInclude Include="Window\WindowGraphics.h" />
+    <ClInclude Include="Window\WindowId.h" />
     <ClInclude Include="Window\WindowMessage.h" />
     <ClInclude Include="Window\WindowProperties.h" />
     <ClInclude Include="Window\WindowsEx.h" />
@@ -228,6 +230,7 @@
     <ClInclude Include="Window\KeyboardManager.h" />
     <ClInclude Include="Window\MouseEventHandler.h" />
     <ClInclude Include="Window\MouseManager.h" />
+    <ClInclude Include="Window\WindowType.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TintEffect.cso" />

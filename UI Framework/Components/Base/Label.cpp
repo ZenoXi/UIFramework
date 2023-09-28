@@ -1,15 +1,17 @@
 #include "Label.h"
 #include "App.h"
+#include "Scenes/Scene.h"
+#include "Window/Window.h"
 
 void zcom::Label::_OnSelected(bool reverse)
 {
-    _scene->GetApp()->keyboardManager.SetExclusiveHandler(this);
+    _scene->GetWindow()->keyboardManager.SetExclusiveHandler(this);
     GetKeyboardState(_keyStates);
 }
 
 void zcom::Label::_OnDeselected()
 {
-    _scene->GetApp()->keyboardManager.ResetExclusiveHandler();
+    _scene->GetWindow()->keyboardManager.ResetExclusiveHandler();
 
     if (_textSelectable)
     {

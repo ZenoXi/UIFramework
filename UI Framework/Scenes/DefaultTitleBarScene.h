@@ -25,7 +25,10 @@ namespace zcom
         void AddTitle(std::wstring title);
         void AddMenuButton(std::wstring name);
 
-        virtual int TitleBarHeight();
+        // The physical height of the title bar scene
+        virtual int TitleBarSceneHeight();
+        // The height of the area which acts as a window caption for moving the window. Can be larger than the title bar
+        virtual int CaptionHeight();
         // Returns the RECT (in title bar scene coordinates) which can be considered as the window menu button
         virtual RECT WindowMenuButtonRect();
         // Returns a list of rects (in title bar scene coordinates) which should not be considered as caption area

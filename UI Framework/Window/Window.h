@@ -2,8 +2,9 @@
 
 #include "WindowProperties.h"
 #include "WindowBackend.h"
+#include "WindowId.h"
+#include "WindowType.h"
 
-#include "Window/MouseManager.h"
 #include "Window/KeyboardManager.h"
 #include "Helper/ResourceManager.h"
 #include "Scenes/Scene.h"
@@ -11,6 +12,7 @@
 #include "Scenes/DefaultNonClientAreaScene.h"
 
 #include <thread>
+#include <atomic>
 
 class App;
 
@@ -19,15 +21,23 @@ namespace zwnd
     class Window
     {
     public: // Initialization
-        Window(App* app, WindowProperties props, HINSTANCE hinst, std::function<void(zwnd::Window* window)> initFunction);
+        Window(
+            App* app,
+            WindowType type,
+            std::optional<WindowId> parentWindowId,
+            WindowProperties props,
+            HINSTANCE hinst,
+            std::function<void(Window* window)> initFunction,
+            std::function<void(Window* window)> onClosed
+        );
         ~Window();
-        // Initialize the specified title bar scene. Should be called in the window init function *once*
+        // Initialize the specified title bar scene. Should be called in the window init function *AT MOST ONCE*
         template<class _Scene>
         void LoadTitleBarScene(zcom::SceneOptionsBase* opt);
-        // Initialize the specified non-client area scene. Should be called in the window init function *once*
+        // Initialize the specified non-client area scene. Should be called in the window init function *ONCE*
         template<class _Scene>
         void LoadNonClientAreaScene(zcom::SceneOptionsBase* opt);
-        // Initialize the specified starting scene. Should be called in the window init function *at least once*
+        // Initialize the specified starting scene. Should be called in the window init function *AT LEAST ONCE*
         template<class _Scene>
         void LoadStartingScene(zcom::SceneOptionsBase* opt);
 
@@ -103,6 +113,10 @@ namespace zwnd
         void Fullscreen(bool fullscreen);
 
     public: // Window state and properties
+        WindowId GetWindowId() { return _id; }
+        WindowType GetWindowType() { return _type; }
+        std::optional<WindowId> GetParent() { return _parentId; }
+
         // Returns a pointer to the window backend view object which contains additional window control functions
         WindowBackendView Backend() const { return WindowBackendView(_window.get()); }
         // Returns the properties specified on window creation
@@ -112,9 +126,16 @@ namespace zwnd
         // Returns the full window height
         int Height() const { return _window->GetHeight(); }
         // Close the window
-        void Close() { _closed = true; }
+        void Close() { _closed.store(true); }
+        // Returns true when window is closing or closed
+        bool Closing() const { return _closed.load(); }
         // Returns whether the window is closed
-        bool Closed() const { return _closed && !_window; }
+        bool Closed() const { return _closed.load() && !_window; }
+
+        // When a blocking window is set, all mouse events will be ignored and cause the blocking window to flash
+        void SetBlockingWindow(zwnd::WindowId windowId);
+        void ResetBlockingWindow();
+        void NotifyBlockingWindow();
 
     public: // Managers
         KeyboardManager keyboardManager;
@@ -153,17 +174,21 @@ namespace zwnd
         void _HandleMessage(WindowMessage msg);
 
     private: // Window
+        WindowId _id;
+        WindowType _type;
+        std::optional<WindowId> _parentId;
+        std::optional<WindowId> _blockingChild;
+
         HINSTANCE _hinst;
         WindowProperties _props;
         std::unique_ptr<WindowBackend> _window = nullptr;
 
         // Becomes true when window is closed
-        bool _closed = false;
+        std::atomic<bool> _closed = false;
+        std::function<void(Window* window)> _onClosed;
 
-        // 'volatile' required because the compiler optimizes away 'while (!_windowCreated);'
-        volatile bool _windowCreated = false;
-        // 'volatile' required because the compiler optimizes away 'while (!_scenesInited);'
-        volatile bool _scenesInited = false;
+        std::atomic<bool> _windowCreated = false;
+        std::atomic<bool> _scenesInited = false;
 
         // Pointer to the app object
         App* _app;
@@ -180,6 +205,7 @@ namespace zwnd
         void _PassParamsToHitTest();
         // Returns a panel containing main panels from all scenes, in screen space
         std::unique_ptr<zcom::Panel> _BuildMasterPanel();
+        bool _TitleBarAvailable();
     };
 
     // /////////////////// //

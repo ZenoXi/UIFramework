@@ -44,7 +44,7 @@ void zcom::EntryScene::_Init(const SceneOptionsBase* options)
     //_canvas->AddComponent(_background.get());
     //_canvas->AddComponent(_helloWorldLabel.get());
     //_canvas->AddComponent(_testPanel.get());
-    _canvas->SetBackgroundColor(D2D1::ColorF(0, 0.0f));
+    _canvas->SetBackgroundColor(D2D1::ColorF(0.1f, 0.1f, 0.1f));
     _canvas->SetOcclusive(false);
     _canvas->BasePanel()->AddOnMouseMove([](Component* item, int, int) {
         item->InvokeRedraw();
