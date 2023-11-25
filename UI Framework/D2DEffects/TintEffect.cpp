@@ -66,7 +66,7 @@ HRESULT CustomTintEffect::CreateEffect(_Outptr_ IUnknown** ppEffectImpl)
     return S_OK;
 }
 
-IFACEMETHODIMP_(UINT32) CustomTintEffect::GetInputCount() const
+IFACEMETHODIMP_(UINT32) CustomTintEffect::GetInputCount() const noexcept
 {
     return 1;
 }
@@ -77,7 +77,7 @@ IFACEMETHODIMP CustomTintEffect::MapInputRectsToOutputRect(
     UINT32 inputRectCount,
     _Out_ D2D1_RECT_L* pOutputRect,
     _Out_ D2D1_RECT_L* pOutputOpaqueSubRect
-)
+) noexcept
 {
     if (inputRectCount != 1)
         return E_INVALIDARG;
@@ -92,7 +92,7 @@ IFACEMETHODIMP CustomTintEffect::MapOutputRectToInputRects(
     _In_ const D2D1_RECT_L* pOutputRect,
     _Out_writes_(inputRectCount) D2D1_RECT_L* pInputRects,
     UINT32 inputRectCount
-) const
+) const noexcept
 {
     if (inputRectCount != 1)
         return E_INVALIDARG;
@@ -105,7 +105,7 @@ IFACEMETHODIMP CustomTintEffect::MapInvalidRect(
     UINT32 inputIndex,
     D2D1_RECT_L invalidInputRect,
     _Out_ D2D1_RECT_L* pInvalidOutputRect
-) const
+) const noexcept
 {
     if (inputIndex != 0)
         return E_INVALIDARG;
@@ -116,7 +116,7 @@ IFACEMETHODIMP CustomTintEffect::MapInvalidRect(
 
 IFACEMETHODIMP CustomTintEffect::SetDrawInfo(
     _In_ ID2D1DrawInfo* drawInfo
-)
+) noexcept
 {
     _drawInfo = drawInfo;
     return _drawInfo->SetPixelShader(GUID_CustomTintShader);
@@ -125,7 +125,7 @@ IFACEMETHODIMP CustomTintEffect::SetDrawInfo(
 IFACEMETHODIMP CustomTintEffect::Initialize(
     _In_ ID2D1EffectContext* pContextInternal,
     _In_ ID2D1TransformGraph* pTransformGraph
-)
+) noexcept
 {
     // Load shader data
     std::ifstream fin("TintEffect.cso", std::ios::binary);
@@ -143,12 +143,12 @@ IFACEMETHODIMP CustomTintEffect::Initialize(
     return hr;
 }
 
-IFACEMETHODIMP CustomTintEffect::PrepareForRender(D2D1_CHANGE_TYPE changeType)
+IFACEMETHODIMP CustomTintEffect::PrepareForRender(D2D1_CHANGE_TYPE changeType) noexcept
 {
     return _drawInfo->SetPixelShaderConstantBuffer(reinterpret_cast<BYTE*>(&_tintColor), sizeof(_tintColor));
 }
 
-IFACEMETHODIMP CustomTintEffect::SetGraph(_In_ ID2D1TransformGraph* pGraph)
+IFACEMETHODIMP CustomTintEffect::SetGraph(_In_ ID2D1TransformGraph* pGraph) noexcept
 {
     return E_NOTIMPL;
 }
