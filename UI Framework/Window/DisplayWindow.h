@@ -78,7 +78,7 @@ class WindowGraphics
     IDWriteFactory* p_DWriteFactory = NULL;
     IDWriteTextFormat* p_DebugTextFormat = NULL;
 public:
-    RECT _windowRect;
+    RECT _windowRect = {};
 
     WindowGraphics() {};
     void Initialize(HWND* hwnd_t);
