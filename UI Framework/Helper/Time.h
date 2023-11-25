@@ -201,7 +201,7 @@ public:
     {
         _currentSystemTime = std::chrono::high_resolution_clock::now();
         if (!_paused) {
-            _currentTime += std::chrono::duration_cast<std::chrono::nanoseconds>(_currentSystemTime - _lastSyncTime).count() * _speed;
+            _currentTime += (int64_t)((double)std::chrono::duration_cast<std::chrono::nanoseconds>(_currentSystemTime - _lastSyncTime).count() * _speed);
         }
         _lastSyncTime = _currentSystemTime;
     }
@@ -264,6 +264,20 @@ public:
         _paused = false;
         _currentTime = 0;
     }
+};
+
+class SimpleTimer
+{
+    Clock _internalClock;
+public:
+    SimpleTimer() : _internalClock(0) {}
+    Clock& InternalClock() { return _internalClock; }
+    int64_t HoursElapsed() { _internalClock.Update(); return _internalClock.Now().GetTime(HOURS); }
+    int64_t MinutesElapsed() { _internalClock.Update(); return _internalClock.Now().GetTime(MINUTES); }
+    int64_t SecondsElapsed() { _internalClock.Update(); return _internalClock.Now().GetTime(SECONDS); }
+    int64_t MillisElapsed() { _internalClock.Update(); return _internalClock.Now().GetTime(MILLISECONDS); }
+    int64_t MicrosElapsed() { _internalClock.Update(); return _internalClock.Now().GetTime(MICROSECONDS); }
+    int64_t NanosElapsed() { _internalClock.Update(); return _internalClock.Now().GetTime(NANOSECONDS); }
 };
 
 enum ClockType
