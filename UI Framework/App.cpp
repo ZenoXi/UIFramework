@@ -78,6 +78,31 @@ std::optional<zwnd::WindowId> App::CreateToolWindow(zwnd::WindowId parentWindowI
     return _windows.back().window->GetWindowId();
 }
 
+std::future<std::optional<zwnd::WindowId>> App::CreateTopWindowAsync(zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction)
+{
+    // TODO: properly clean up on app close instead of detaching the thread
+    std::packaged_task<std::optional<zwnd::WindowId>()> task([=] { return CreateTopWindow(props, initFunction); });
+    std::future<std::optional<zwnd::WindowId>> future = task.get_future();
+    std::thread(std::move(task)).detach();
+    return future;
+}
+
+std::future<std::optional<zwnd::WindowId>> App::CreateChildWindowAsync(zwnd::WindowId parentWindowId, zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction)
+{
+    std::packaged_task<std::optional<zwnd::WindowId>()> task([=] { return CreateChildWindow(parentWindowId, props, initFunction); });
+    std::future<std::optional<zwnd::WindowId>> future = task.get_future();
+    std::thread(std::move(task)).detach();
+    return future;
+}
+
+std::future<std::optional<zwnd::WindowId>> App::CreateToolWindowAsync(zwnd::WindowId parentWindowId, zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction)
+{
+    std::packaged_task<std::optional<zwnd::WindowId>()> task([=] { return CreateToolWindow(parentWindowId, props, initFunction); });
+    std::future<std::optional<zwnd::WindowId>> future = task.get_future();
+    std::thread(std::move(task)).detach();
+    return future;
+}
+
 Handle<zwnd::Window> App::GetWindow(zwnd::WindowId windowId)
 {
     std::lock_guard<std::mutex> lock(_m_windows);
@@ -225,7 +250,10 @@ void App::_TryDestruct(zwnd::WindowId windowId)
         }
         else if (it->window->GetWindowType() == zwnd::WindowType::TOOL)
         {
+            it->markedForDeleting = true;
 
+            // Invoke parent destruction check
+            _TryDestruct(it->window->GetParent().value());
         }
 
         return;

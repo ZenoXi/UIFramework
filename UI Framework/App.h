@@ -6,6 +6,7 @@
 
 #include <mutex>
 #include <optional>
+#include <future>
 
 class App
 {
@@ -31,6 +32,10 @@ public:
     std::optional<zwnd::WindowId> CreateTopWindow(zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction);
     std::optional<zwnd::WindowId> CreateChildWindow(zwnd::WindowId parentWindowId, zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction);
     std::optional<zwnd::WindowId> CreateToolWindow(zwnd::WindowId parentWindowId, zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction);
+
+    std::future<std::optional<zwnd::WindowId>> CreateTopWindowAsync(zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction);
+    std::future<std::optional<zwnd::WindowId>> CreateChildWindowAsync(zwnd::WindowId parentWindowId, zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction);
+    std::future<std::optional<zwnd::WindowId>> CreateToolWindowAsync(zwnd::WindowId parentWindowId, zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction);
 
     Handle<zwnd::Window> GetWindow(zwnd::WindowId windowId);
     Handle<zwnd::Window> GetWindowNoLock(zwnd::WindowId windowId);
