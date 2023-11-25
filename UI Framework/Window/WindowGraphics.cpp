@@ -12,7 +12,7 @@ void zwnd::WindowGraphics::Initialize(HWND* hwnd)
 
     // Obtain the size of the drawing area.
     GetClientRect(*p_hwnd, &_windowRect);
-
+    
     D2D1CreateFactory(
         D2D1_FACTORY_TYPE_MULTI_THREADED,
         {},
@@ -21,7 +21,7 @@ void zwnd::WindowGraphics::Initialize(HWND* hwnd)
 
     // Register custom effects
     hr = CustomTintEffect::Register(p_D2DFactory.Get());
-
+    
     D3D11CreateDevice(
         nullptr,
         D3D_DRIVER_TYPE_HARDWARE,

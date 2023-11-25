@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WindowsEx.h"
+#include "WindowDisplayType.h"
 #include <string>
 
 namespace zwnd
@@ -19,6 +20,12 @@ namespace zwnd
         int initialWidth = 1280;
         // Initial height of the window
         int initialHeight = 720;
+        // How to display the window right after creation
+        WindowDisplayType initialDisplay = WindowDisplayType::NORMAL;
+        // Disable window animation when maximizing/minimizing/restoring
+        bool disableWindowAnimations = false;
+        // Disable ability for window to become activated
+        bool disableWindowActivation = false;
 
         //
         // Top level window properties
@@ -38,6 +45,9 @@ namespace zwnd
         WindowProperties& InitialWidth(int width) { initialWidth = width; return *this; }
         WindowProperties& InitialHeight(int height) { initialHeight = height; return *this; }
         WindowProperties& InitialSize(int width, int height) { initialWidth = width; initialHeight = height; return *this; }
+        WindowProperties& InitialDisplay(WindowDisplayType initialDisplay) { this->initialDisplay = initialDisplay; return *this; }
+        WindowProperties& DisableWindowAnimations() { disableWindowAnimations = true; return *this; }
+        WindowProperties& DisableWindowActivation() { disableWindowActivation = true; return *this; }
         WindowProperties& MainWindow() { mainWindow = true; return *this; }
         WindowProperties& BlockParent() { blockParent = true; return *this; }
     };

@@ -6,6 +6,7 @@
 #include "WindowProperties.h"
 #include "WindowGraphics.h"
 #include "WindowMessage.h"
+#include "WindowDisplayType.h"
 
 #include "CursorIcon.h"
 
@@ -157,6 +158,11 @@ namespace zwnd
         void Minimize();
         void Restore();
 
+        void SetDisplayType(WindowDisplayType displayType);
+
+        RECT GetMonitorRectAtScreenPoint(int x, int y);
+        RECT GetMonitorRectAtWindowPoint(int x, int y);
+
         void SetFullscreen(bool fullscreen);
         bool IsFullscreen();
         void SetCursorIcon(CursorIcon cursor);
@@ -194,6 +200,13 @@ namespace zwnd
         int _messageHeight;
         std::mutex _m_windowSize;
 
+        // Should be set to true, when displaying the window for the first time using ShowWindow().
+        // When this flag is set, WM_WINDOWPOSCHANGING and WM_SIZE won't use a mutex, since certain
+        // SW_*** flags result in WM_SIZE messages with a preceding WM_WINDOWPOSCHANGING message
+        // that has the SWP_NOSIZE flag set, which leads into attempt to unlock an unlocked mutex.
+        bool _insideInitialShowWindowCall = false;
+        bool _initialShowWindowCallDone = false;
+
         bool _fullscreen = false;
         bool _maximized = false;
         bool _minimized = false;
@@ -201,6 +214,8 @@ namespace zwnd
         bool _windowedMaximized;
         bool _cursorVisible = true;
         bool _cursorVisibilityChanged = false;
+
+        bool _activationDisabled = false;
 
         RECT _last2Moves[2];
         POINT _lastMouseMove;
@@ -252,6 +267,11 @@ namespace zwnd
         bool Minimized() { return _wnd->Minimized(); }
         void Minimize() { _wnd->Minimize(); }
         void Restore() { _wnd->Restore(); }
+
+        void SetDisplayType(WindowDisplayType displayType) { _wnd->SetDisplayType(displayType); }
+
+        RECT GetMonitorRectAtScreenPoint(int x, int y) { return _wnd->GetMonitorRectAtScreenPoint(x, y); }
+        RECT GetMonitorRectAtWindowPoint(int x, int y) { return _wnd->GetMonitorRectAtWindowPoint(x, y); }
 
         void SetCursorIcon(CursorIcon cursor) { _wnd->SetCursorIcon(cursor); }
         // Shows/Hides the cursor until it is moved or this function is called

@@ -276,6 +276,118 @@ namespace zwnd
         static const char* ID() { return "mouse_right_released"; }
     };
 
+    class NonClientMouseLeftPressedMessage
+    {
+    public:
+        int x;
+        int y;
+
+        WindowMessage Encode()
+        {
+            WindowMessage msg;
+            msg.id = ID();
+            *(int*)(msg.data + 0) = x;
+            *(int*)(msg.data + 4) = y;
+            return msg;
+        }
+
+        bool Decode(WindowMessage msg)
+        {
+            if (msg.id != ID())
+                return false;
+
+            x = *(int*)(msg.data + 0);
+            y = *(int*)(msg.data + 4);
+            return true;
+        }
+
+        static const char* ID() { return "mouse_left_pressed"; }
+    };
+
+    class NonClientMouseLeftReleasedMessage
+    {
+    public:
+        int x;
+        int y;
+
+        WindowMessage Encode()
+        {
+            WindowMessage msg;
+            msg.id = ID();
+            *(int*)(msg.data + 0) = x;
+            *(int*)(msg.data + 4) = y;
+            return msg;
+        }
+
+        bool Decode(WindowMessage msg)
+        {
+            if (msg.id != ID())
+                return false;
+
+            x = *(int*)(msg.data + 0);
+            y = *(int*)(msg.data + 4);
+            return true;
+        }
+
+        static const char* ID() { return "mouse_left_released"; }
+    };
+
+    class NonClientMouseRightPressedMessage
+    {
+    public:
+        int x;
+        int y;
+
+        WindowMessage Encode()
+        {
+            WindowMessage msg;
+            msg.id = ID();
+            *(int*)(msg.data + 0) = x;
+            *(int*)(msg.data + 4) = y;
+            return msg;
+        }
+
+        bool Decode(WindowMessage msg)
+        {
+            if (msg.id != ID())
+                return false;
+
+            x = *(int*)(msg.data + 0);
+            y = *(int*)(msg.data + 4);
+            return true;
+        }
+
+        static const char* ID() { return "mouse_right_pressed"; }
+    };
+
+    class NonClientMouseRightReleasedMessage
+    {
+    public:
+        int x;
+        int y;
+
+        WindowMessage Encode()
+        {
+            WindowMessage msg;
+            msg.id = ID();
+            *(int*)(msg.data + 0) = x;
+            *(int*)(msg.data + 4) = y;
+            return msg;
+        }
+
+        bool Decode(WindowMessage msg)
+        {
+            if (msg.id != ID())
+                return false;
+
+            x = *(int*)(msg.data + 0);
+            y = *(int*)(msg.data + 4);
+            return true;
+        }
+
+        static const char* ID() { return "mouse_right_released"; }
+    };
+
     class MouseWheelUpMessage
     {
     public:
@@ -441,5 +553,35 @@ namespace zwnd
         }
 
         static const char* ID() { return "char"; }
+    };
+
+    class WindowActivateMessage
+    {
+    public:
+        enum {
+            ACTIVATED = 1,
+            CLICK_ACTIVATED = 2,
+            DEACTIVATED = 0
+        };
+        int activationType;
+
+        WindowMessage Encode()
+        {
+            WindowMessage msg;
+            msg.id = ID();
+            *(int*)(msg.data) = activationType;
+            return msg;
+        }
+
+        bool Decode(WindowMessage msg)
+        {
+            if (msg.id != ID())
+                return false;
+
+            activationType = *(int*)(msg.data);
+            return true;
+        }
+
+        static const char* ID() { return "window_activate"; }
     };
 }

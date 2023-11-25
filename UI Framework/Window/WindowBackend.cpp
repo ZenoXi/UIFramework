@@ -25,12 +25,16 @@
 //    return TRUE;
 //}
 
-zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND parentWindow) : _hInst(hInst), _parentHwnd(parentWindow), _wndClassName(props.windowClassName.c_str())
+zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND parentWindow)
+  : _hInst(hInst),
+    _parentHwnd(parentWindow),
+    _wndClassName(props.windowClassName.c_str())
 {
     _linfo.SetWidth(props.initialWidth);
     _linfo.SetHeight(props.initialHeight);
     _messageWidth = props.initialWidth;
     _messageHeight = props.initialHeight;
+    _activationDisabled = props.disableWindowActivation;
 
     OleInitialize(NULL);
 
@@ -68,18 +72,20 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND
     _last2Moves[0] = _windowedRect;
     _last2Moves[1] = _windowedRect;
 
+    // WS_THICKFRAME: adds the automatic sizing border
+    // WS_SYSMENU: required to show the window in the taskbar
+    // WS_MAXIMIZEBOX: enables Aero snapping and the maximize option in the window menu
+    // WS_MINIMIZEBOX: enables the minimize option in the window menu
+    // WS_CAPTION: automatic window region updating
+    DWORD windowStyle = WS_THICKFRAME | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION;
+    
     // Create and show window
     _hwnd = CreateWindowEx(
-        WS_EX_LAYERED,
+        WS_EX_LAYERED | (_activationDisabled ? WS_EX_NOACTIVATE : NULL),
         //NULL,
         _wndClassName,
         nullptr,
-        // WS_THICKFRAME: adds the automatic sizing border
-        // WS_SYSMENU: required to show the window in the taskbar
-        // WS_MAXIMIZEBOX: enables Aero snapping and the maximize option in the window menu
-        // WS_MINIMIZEBOX: enables the minimize option in the window menu
-        // WS_CAPTION: automatic window region updating
-        WS_THICKFRAME | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_CAPTION,
+        windowStyle,
         //WS_POPUP,
         x, y, w, h,
         parentWindow,
@@ -91,24 +97,47 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND
     _fileDropHandler = std::make_unique<FileDropHandler>(_hwnd);
     HRESULT hr = RegisterDragDrop(_hwnd, _fileDropHandler.get());
 
+    if (props.disableWindowAnimations)
+    {
+        BOOL attrib = TRUE;
+        DwmSetWindowAttribute(_hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &attrib, sizeof(attrib));
+    }
+
     gfx.Initialize(&_hwnd);
 
     int showFlag = SW_SHOWNORMAL;
-    ShowWindow(_hwnd, showFlag);
+    switch (props.initialDisplay)
+    {
+    case zwnd::WindowDisplayType::NORMAL: { showFlag = SW_SHOWNORMAL; break; }
+    case zwnd::WindowDisplayType::NORMAL_NOACTIVATE: { showFlag = SW_SHOWNA; break; }
+    case zwnd::WindowDisplayType::MINIMIZED: { showFlag = SW_SHOWMINIMIZED; break; }
+    case zwnd::WindowDisplayType::MAXIMIZED: { showFlag = SW_SHOWMAXIMIZED; break; }
+    case zwnd::WindowDisplayType::HIDDEN: { showFlag = SW_HIDE; break; }
+    }
+    if (_activationDisabled && showFlag == SW_SHOWNORMAL)
+        showFlag = SW_SHOWNOACTIVATE;
 
-    // Send resize message to UI
-    WindowSizeMessage message;
-    message.width = _messageWidth;
-    message.height = _messageHeight;
-    if (showFlag == SW_SHOWMAXIMIZED)
-        message.maximized = true;
-    else if (showFlag == SW_SHOWMINIMIZED)
-        message.minimized = true;
-    else if (showFlag == SW_SHOWNORMAL)
-        message.restored = true;
-    _m_msg.lock();
-    _msgQueue.push(message.Encode());
-    _m_msg.unlock();
+    if (showFlag != SW_HIDE)
+    {
+        _insideInitialShowWindowCall = true;
+        ShowWindow(_hwnd, showFlag);
+        _insideInitialShowWindowCall = false;
+        _initialShowWindowCallDone = true;
+
+        // Send resize message to UI
+        WindowSizeMessage message;
+        message.width = _messageWidth;
+        message.height = _messageHeight;
+        if (showFlag == SW_SHOWMAXIMIZED)
+            message.maximized = true;
+        else if (showFlag == SW_SHOWMINIMIZED)
+            message.minimized = true;
+        else if (showFlag == SW_SHOWNORMAL)
+            message.restored = true;
+        _m_msg.lock();
+        _msgQueue.push(message.Encode());
+        _m_msg.unlock();
+    }
 }
 
 zwnd::WindowBackend::~WindowBackend()
@@ -168,21 +197,18 @@ bool zwnd::WindowBackend::ProcessMessages()
 
 void zwnd::WindowBackend::ProcessQueueMessages(std::function<void(WindowMessage)> callback)
 {
-    static int counter1 = 0;
-    static int counter2 = 0;
-
-    //if (_parentHwnd)
-    //    std::cout << "Processing outer.. " << counter1++ << "\n";
-
-    std::lock_guard<std::mutex> lock(_m_msg);
+    // Create a copy of the queue and process the messages without blocking the message thread
+    // Not doing this leads to a deadlock when trying to create a child window from the UI thread
+    std::unique_lock<std::mutex> lock(_m_msg);
+    auto msgQueueCopy = _msgQueue;
     while (!_msgQueue.empty())
-    {
-    //    if (_parentHwnd)
-    //        std::cout << "Processing inner.. " << counter2++ << "\n";
-
-        callback(_msgQueue.front());
-        //HandleMsgFromQueue(_msgQueue.front());
         _msgQueue.pop();
+    lock.unlock();
+
+    while (!msgQueueCopy.empty())
+    {
+        callback(msgQueueCopy.front());
+        msgQueueCopy.pop();
     }
 }
 
@@ -246,11 +272,17 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
     }
     case WM_NCACTIVATE:
     {
+        WindowActivateMessage message;
+        message.activationType = wParam == TRUE ? WindowActivateMessage::ACTIVATED : WindowActivateMessage::DEACTIVATED;
+        _m_msg.lock();
+        _msgQueue.push(message.Encode());
+        _m_msg.unlock();
+
         // DefWindowProc for this message causes a short but very noticeable freeze in the message pipeline
         // when a window has owned windows or is an owned window.
         // Microsoft documentation states that the function "draws the title bar or icon title in its active
         // colors when the wParam parameter is TRUE and in its inactive colors when wParam is FALSE".
-        // I can't say why this behavior occurs, but since the title bar is custom drawn, the default processing
+        // I can't say why the freeze occurs, but since the title bar is custom drawn, the default processing
         // for this message is unnecessary.
 
         // Return FALSE explicitly, since returning TRUE would result in default processing
@@ -260,6 +292,23 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
     {
         // Capture all window area as client area
         return 0;
+    }
+    case WM_MOUSEACTIVATE:
+    {
+        if (_activationDisabled)
+        {
+            return MA_NOACTIVATE;
+        }
+        break;
+    }
+    case WM_ACTIVATE:
+    {
+        WindowActivateMessage message;
+        message.activationType = wParam;
+        _m_msg.lock();
+        _msgQueue.push(message.Encode());
+        _m_msg.unlock();
+        break;
     }
     case WM_NCHITTEST:
     {
@@ -463,6 +512,9 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
             return DefWindowProc(hWnd, msg, wParam, lParam);
 
         _m_msg.lock();
+        // TODO: Build a cursor map that is updated every time the UI layout changes
+        // This will allow cursor to be updated on the first mouse move message that
+        // is outside of a custom cursor component, instead of the second message.
         SetCursor(_cursor);
         _m_msg.unlock();
         break;
@@ -470,7 +522,6 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
     case WM_LBUTTONDOWN:
     {
         SetCapture(_hwnd);
-        SetWindowPos(_hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 
         MouseLeftPressedMessage message;
         message.x = GET_X_LPARAM(lParam);
@@ -511,6 +562,46 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         _msgQueue.push(message.Encode());
         _m_msg.unlock();
         break;
+    }
+    case WM_NCLBUTTONDOWN:
+    {
+        NonClientMouseLeftPressedMessage message;
+        message.x = GET_X_LPARAM(lParam);
+        message.y = GET_Y_LPARAM(lParam);
+        _m_msg.lock();
+        _msgQueue.push(message.Encode());
+        _m_msg.unlock();
+        return DefWindowProc(hWnd, msg, wParam, lParam);
+    }
+    case WM_NCLBUTTONUP:
+    {
+        NonClientMouseLeftReleasedMessage message;
+        message.x = GET_X_LPARAM(lParam);
+        message.y = GET_Y_LPARAM(lParam);
+        _m_msg.lock();
+        _msgQueue.push(message.Encode());
+        _m_msg.unlock();
+        return DefWindowProc(hWnd, msg, wParam, lParam);
+    }
+    case WM_NCRBUTTONDOWN:
+    {
+        NonClientMouseRightPressedMessage message;
+        message.x = GET_X_LPARAM(lParam);
+        message.y = GET_Y_LPARAM(lParam);
+        _m_msg.lock();
+        _msgQueue.push(message.Encode());
+        _m_msg.unlock();
+        return DefWindowProc(hWnd, msg, wParam, lParam);
+    }
+    case WM_NCRBUTTONUP:
+    {
+        NonClientMouseRightReleasedMessage message;
+        message.x = GET_X_LPARAM(lParam);
+        message.y = GET_Y_LPARAM(lParam);
+        _m_msg.lock();
+        _msgQueue.push(message.Encode());
+        _m_msg.unlock();
+        return DefWindowProc(hWnd, msg, wParam, lParam);
     }
     case WM_MOUSEWHEEL:
     {
@@ -561,13 +652,13 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         _m_msg.unlock();
         break;
     }
-    //case WM_GETMINMAXINFO:
-    //{
-    //    MINMAXINFO* info = (MINMAXINFO*)lParam;
-    //    info->ptMinTrackSize.x = 640;
-    //    info->ptMinTrackSize.y = 480;
-    //    break;
-    //}
+    case WM_GETMINMAXINFO:
+    {
+        MINMAXINFO* info = (MINMAXINFO*)lParam;
+        info->ptMinTrackSize.x = 0;
+        info->ptMinTrackSize.y = 0;
+        break;
+    }
     case WM_ENTERSIZEMOVE:
     {
         _sizingStarted = true;
@@ -586,7 +677,8 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         if (!(pos->flags & SWP_NOSIZE) && (_messageWidth != pos->cx || _messageHeight != pos->cy))
         {
             // Wait for window sizing to become available
-            _m_windowSize.lock();
+            if (!_insideInitialShowWindowCall)
+                _m_windowSize.lock();
         }
         return DefWindowProc(hWnd, msg, wParam, lParam);
     }
@@ -594,7 +686,7 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
     {
         int w = LOWORD(lParam);
         int h = HIWORD(lParam);
-        //std::cout << w << ":" << h << '\n';
+        //std::cout << "WM_SIZE: " << w << ":" << h << " - " << wParam << '\n';
 
         if (_messageWidth == w && _messageHeight == h)
             break;
@@ -637,7 +729,8 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         _msgQueue.push(message.Encode());
         _m_msg.unlock();
 
-        _m_windowSize.unlock();
+        if (!_insideInitialShowWindowCall)
+            _m_windowSize.unlock();
 
         return DefWindowProc(hWnd, msg, wParam, lParam);
         break;
@@ -772,6 +865,8 @@ void zwnd::WindowBackend::HandleFullscreenChange()
             RECT monitor = info.rcMonitor;
             int w = monitor.right - monitor.left;
             int h = monitor.bottom - monitor.top;
+
+            // TODO: perhaps hiding the window, changing the style and showing it again would work
 
             SetWindowLong(_hwnd, GWL_STYLE, WS_POPUP);
             SetWindowPos(_hwnd, HWND_TOP, monitor.left, monitor.top, w, h, SWP_FRAMECHANGED);
@@ -972,7 +1067,7 @@ RECT zwnd::WindowBackend::GetWindowRectangle()
 
 void zwnd::WindowBackend::SetWindowRectangle(RECT rect)
 {
-    SetWindowPos(_hwnd, 0, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER | SWP_ASYNCWINDOWPOS);
+    SetWindowPos(_hwnd, 0, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER | SWP_ASYNCWINDOWPOS | (_activationDisabled ? SWP_NOACTIVATE : NULL));
 }
 
 int zwnd::WindowBackend::GetWidth()
@@ -999,7 +1094,7 @@ void zwnd::WindowBackend::SetHeight(int newHeight)
 
 void zwnd::WindowBackend::SetSize(int newWidth, int newHeight)
 {
-    SetWindowPos(_hwnd, 0, 0, 0, newWidth, newHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_ASYNCWINDOWPOS);
+    SetWindowPos(_hwnd, 0, 0, 0, newWidth, newHeight, SWP_NOMOVE | SWP_NOZORDER | SWP_ASYNCWINDOWPOS | (_activationDisabled ? SWP_NOACTIVATE : NULL));
 }
 
 int zwnd::WindowBackend::GetXPos()
@@ -1024,7 +1119,7 @@ void zwnd::WindowBackend::SetYPos(int newY)
 
 void zwnd::WindowBackend::SetPosition(int newX, int newY)
 {
-    SetWindowPos(_hwnd, 0, newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_ASYNCWINDOWPOS);
+    SetWindowPos(_hwnd, 0, newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_ASYNCWINDOWPOS | (_activationDisabled ? SWP_NOACTIVATE : NULL));
 }
 
 bool zwnd::WindowBackend::Maximized()
@@ -1056,6 +1151,45 @@ void zwnd::WindowBackend::Minimize()
 void zwnd::WindowBackend::Restore()
 {
     PostMessage(_hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+}
+
+void zwnd::WindowBackend::SetDisplayType(WindowDisplayType displayType)
+{
+    int showFlag = SW_SHOWNORMAL;
+    switch (displayType)
+    {
+    case zwnd::WindowDisplayType::NORMAL: { showFlag = SW_SHOWNORMAL; break; }
+    case zwnd::WindowDisplayType::NORMAL_NOACTIVATE: { showFlag = SW_SHOWNA; break; }
+    case zwnd::WindowDisplayType::MINIMIZED: { showFlag = SW_SHOWMINIMIZED; break; }
+    case zwnd::WindowDisplayType::MAXIMIZED: { showFlag = SW_SHOWMAXIMIZED; break; }
+    case zwnd::WindowDisplayType::HIDDEN: { showFlag = SW_HIDE; break; }
+    }
+
+    if (!_initialShowWindowCallDone)
+        _insideInitialShowWindowCall = true;
+
+    ShowWindow(_hwnd, showFlag);
+
+    if (!_initialShowWindowCallDone)
+    {
+        _insideInitialShowWindowCall = false;
+        _initialShowWindowCallDone = true;
+    }
+}
+
+RECT zwnd::WindowBackend::GetMonitorRectAtScreenPoint(int x, int y)
+{
+    HMONITOR hmon = MonitorFromPoint({ x, y }, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO info;
+    info.cbSize = sizeof(info);
+    GetMonitorInfo(hmon, &info);
+    return info.rcMonitor;
+}
+
+RECT zwnd::WindowBackend::GetMonitorRectAtWindowPoint(int x, int y)
+{
+    RECT windowRect = GetWindowRectangle();
+    return GetMonitorRectAtScreenPoint(windowRect.left + x, windowRect.top + y);
 }
 
 void zwnd::WindowBackend::SetFullscreen(bool fullscreen)
