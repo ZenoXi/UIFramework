@@ -245,7 +245,7 @@ namespace zcom
             );
 
             InvokeRedraw();
-            _textFormatChangedEvent.InvokeAll(this);
+            _textFormatChangedEvent->InvokeAll(this);
         }
 
         void _CreateTextLayout()
@@ -268,7 +268,7 @@ namespace zcom
                 // Create the text layout
                 _dwriteFactory->CreateTextLayout(
                     finalText.c_str(),
-                    finalText.length(),
+                    (UINT32)finalText.length(),
                     _dwriteTextFormat,
                     finalWidth,
                     finalHeight,
@@ -343,7 +343,7 @@ namespace zcom
                 _dwriteTextLayout->SetStrikethrough(true, _strikethroughRange);
 
             InvokeRedraw();
-            _textLayoutChangedEvent.InvokeAll(this);
+            _textLayoutChangedEvent->InvokeAll(this);
         }
 
     public:
@@ -381,9 +381,9 @@ namespace zcom
         IDWriteTextFormat* _dwriteTextFormat = nullptr;
         IDWriteTextLayout* _dwriteTextLayout = nullptr;
 
-        Event<void, Label*, std::wstring&> _textChangedEvent;
-        Event<void, Label*> _textFormatChangedEvent;
-        Event<void, Label*> _textLayoutChangedEvent;
+        EventEmitter<void, Label*, std::wstring*> _textChangedEvent;
+        EventEmitter<void, Label*> _textFormatChangedEvent;
+        EventEmitter<void, Label*> _textLayoutChangedEvent;
 
     protected:
         friend class Scene;
@@ -512,7 +512,7 @@ namespace zcom
                 return;
 
             // 'text' can be modified by the handlers
-            _textChangedEvent.InvokeAll(this, text);
+            _textChangedEvent->InvokeAll(this, &text);
 
             _text = text;
             SetSelectionStart(0);
@@ -789,34 +789,19 @@ namespace zcom
         // Handler parameters:
         // - a pointer to the label object
         // - a reference to the new text string. This parameter can be modified
-        void AddOnTextChanged(std::function<void(Label*, std::wstring&)> handler, EventInfo info = EventInfo{nullptr, ""})
+        EventSubscription<void, Label*, std::wstring*> SubscribeOnTextChanged(std::function<void(Label*, std::wstring*)> handler)
         {
-            _textChangedEvent.Add(handler, info);
+            return _textChangedEvent->Subscribe(handler);
         }
 
-        void AddOnTextFormatChanged(std::function<void(Label*)> handler, EventInfo info = EventInfo{ nullptr, "" })
+        EventSubscription<void, Label*> SubscribeOnTextFormatChanged(std::function<void(Label*)> handler)
         {
-            _textFormatChangedEvent.Add(handler, info);
+            return _textFormatChangedEvent->Subscribe(handler);
         }
 
-        void AddOnTextLayoutChanged(std::function<void(Label*)> handler, EventInfo info = EventInfo{ nullptr, "" })
+        EventSubscription<void, Label*> SubscribeOnTextLayoutChanged(std::function<void(Label*)> handler)
         {
-            _textLayoutChangedEvent.Add(handler, info);
-        }
-
-        void RemoveOnTextChanged(EventInfo info)
-        {
-            _textChangedEvent.Remove(info);
-        }
-
-        void RemoveOnTextFormatChanged(EventInfo info)
-        {
-            _textFormatChangedEvent.Remove(info);
-        }
-
-        void RemoveOnTextLayoutChanged(EventInfo info)
-        {
-            _textLayoutChangedEvent.Remove(info);
+            return _textLayoutChangedEvent->Subscribe(handler);
         }
     };
 }

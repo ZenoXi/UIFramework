@@ -1016,7 +1016,7 @@ namespace zcom
         MatchEnforcing _matchEnforcing = MatchEnforcing::IMMEDIATE;
         std::wstring _initialText = L"";
 
-        Event<void, Label*, std::wstring&> _textChangedEvent;
+        EventEmitter<void, Label*, std::wstring*> _textChangedEvent;
         bool _settingInternally = false;
 
     protected:
@@ -1054,18 +1054,18 @@ namespace zcom
             AddItem(_textLabel.get());
             AddItem(_placeholderTextLabel.get());
 
-            _textLabel->AddOnTextChanged([&](Label* label, std::wstring& newText)
+            _textLabel->SubscribeOnTextChanged([&](Label* label, std::wstring* newText)
             {
                 _OnLabelTextChanged(label, newText);
-            }, { this });
-            _textLabel->AddOnTextFormatChanged([&](Label* label)
+            }).Detach();
+            _textLabel->SubscribeOnTextFormatChanged([&](Label* label)
             {
                 _OnLabelTextFormatChanged(label);
-            }, { this });
-            _textLabel->AddOnTextLayoutChanged([&](Label* label)
+            }).Detach();
+            _textLabel->SubscribeOnTextLayoutChanged([&](Label* label)
             {
                 _OnLabelTextLayoutChanged(label);
-            }, { this });
+            }).Detach();
 
             _UpdateTargetCursorXPos();
             _UpdateTextArea();
@@ -1157,14 +1157,9 @@ namespace zcom
         // Handler parameters:
         // - a pointer to the label object
         // - a reference to the new text string. This parameter can be modified
-        void AddOnTextChanged(std::function<void(Label*, std::wstring&)> handler, EventInfo info = EventInfo{ nullptr, "" })
+        EventSubscription<void, Label*, std::wstring*> SubscribeOnTextChanged(std::function<void(Label*, std::wstring*)> handler)
         {
-            _textChangedEvent.Add(handler, info);
-        }
-
-        void RemoveOnTextChanged(EventInfo info)
-        {
-            _textChangedEvent.Remove(info);
+            return _textChangedEvent->Subscribe(handler);
         }
 
     protected:
@@ -1333,17 +1328,17 @@ namespace zcom
             return pattern.empty() || text.empty() || std::regex_match(text, std::wregex(pattern));
         }
 
-        void _OnLabelTextChanged(Label* label, std::wstring& newText)
+        void _OnLabelTextChanged(Label* label, std::wstring* newText)
         {
             if (!_settingInternally)
             {
-                if (!_TextMatches(newText, _pattern))
+                if (!_TextMatches(*newText, _pattern))
                 {
-                    newText = label->GetText();
+                    *newText = label->GetText();
                 }
             }
 
-            _textChangedEvent.InvokeAll(label, newText);
+            _textChangedEvent->InvokeAll(label, newText);
         }
 
         void _OnLabelTextFormatChanged(Label* label)

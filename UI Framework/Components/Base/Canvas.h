@@ -4,7 +4,7 @@
 
 #include "Window/MouseEventHandler.h"
 #include "Window/KeyboardEventHandler.h"
-#include "Helper/Event.h"
+#include "Helper/EventEmitter.h"
 
 #include <vector>
 
@@ -13,13 +13,13 @@ namespace zcom
     // Base storage for all components
     class Canvas : public KeyboardEventHandler
     {
-        Event<bool, const EventTargets*> _mouseMoveHandlers;
-        Event<bool, const EventTargets*> _leftPressedHandlers;
-        Event<bool, const EventTargets*> _leftReleasedHandlers;
-        Event<bool, const EventTargets*> _rightPressedHandlers;
-        Event<bool, const EventTargets*> _rightReleasedHandlers;
-        Event<bool, const EventTargets*> _wheelUpHandlers;
-        Event<bool, const EventTargets*> _wheelDownHandlers;
+        EventEmitter<bool, const EventTargets*> _mouseMoveHandlers;
+        EventEmitter<bool, const EventTargets*> _leftPressedHandlers;
+        EventEmitter<bool, const EventTargets*> _leftReleasedHandlers;
+        EventEmitter<bool, const EventTargets*> _rightPressedHandlers;
+        EventEmitter<bool, const EventTargets*> _rightReleasedHandlers;
+        EventEmitter<bool, const EventTargets*> _wheelUpHandlers;
+        EventEmitter<bool, const EventTargets*> _wheelDownHandlers;
 
         bool _mouseInside = false;
         bool _mouseLeftClicked = false;
@@ -191,15 +191,7 @@ namespace zcom
 
             auto targets = _panel->OnMouseMove(x, y);
             targets.Remove(_panel.get());
-
-            _mouseMoveHandlers.Lock();
-            for (auto& handler : _mouseMoveHandlers)
-            {
-                if (handler)
-                    handler(&targets);
-            }
-            _mouseMoveHandlers.Unlock();
-
+            _mouseMoveHandlers->InvokeAll(&targets);
             return targets.MainTarget();
         }
 
@@ -224,15 +216,7 @@ namespace zcom
 
             auto targets = _panel->OnLeftPressed(x, y);
             targets.Remove(_panel.get());
-
-            _leftPressedHandlers.Lock();
-            for (auto& handler : _leftPressedHandlers)
-            {
-                if (handler)
-                    handler(&targets);
-            }
-            _leftPressedHandlers.Unlock();
-
+            _leftPressedHandlers->InvokeAll(&targets);
             return targets.MainTarget();
 
             //// Clear selection
@@ -264,15 +248,7 @@ namespace zcom
 
             auto targets = _panel->OnLeftReleased(x, y);
             targets.Remove(_panel.get());
-
-            _leftReleasedHandlers.Lock();
-            for (auto& handler : _leftReleasedHandlers)
-            {
-                if (handler)
-                    handler(&targets);
-            }
-            _leftReleasedHandlers.Unlock();
-
+            _leftReleasedHandlers->InvokeAll(&targets);
             return targets.MainTarget();
         }
 
@@ -282,15 +258,7 @@ namespace zcom
 
             auto targets = _panel->OnRightPressed(x, y);
             targets.Remove(_panel.get());
-
-            _rightPressedHandlers.Lock();
-            for (auto& handler : _rightPressedHandlers)
-            {
-                if (handler)
-                    handler(&targets);
-            }
-            _rightPressedHandlers.Unlock();
-
+            _rightPressedHandlers->InvokeAll(&targets);
             return targets.MainTarget();
         }
 
@@ -300,15 +268,7 @@ namespace zcom
 
             auto targets = _panel->OnRightReleased(x, y);
             targets.Remove(_panel.get());
-
-            _rightReleasedHandlers.Lock();
-            for (auto& handler : _rightReleasedHandlers)
-            {
-                if (handler)
-                    handler(&targets);
-            }
-            _rightReleasedHandlers.Unlock();
-
+            _rightReleasedHandlers->InvokeAll(&targets);
             return targets.MainTarget();
         }
 
@@ -316,15 +276,7 @@ namespace zcom
         {
             auto targets = _panel->OnWheelUp(x, y);
             targets.Remove(_panel.get());
-
-            _wheelUpHandlers.Lock();
-            for (auto& handler : _wheelUpHandlers)
-            {
-                if (handler)
-                    handler(&targets);
-            }
-            _wheelUpHandlers.Unlock();
-
+            _wheelUpHandlers->InvokeAll(&targets);
             return targets.MainTarget();
         }
 
@@ -332,15 +284,7 @@ namespace zcom
         {
             auto targets = _panel->OnWheelDown(x, y);
             targets.Remove(_panel.get());
-
-            _wheelDownHandlers.Lock();
-            for (auto& handler : _wheelDownHandlers)
-            {
-                if (handler)
-                    handler(&targets);
-            }
-            _wheelDownHandlers.Unlock();
-
+            _wheelDownHandlers->InvokeAll(&targets);
             return targets.MainTarget();
         }
 
@@ -379,74 +323,39 @@ namespace zcom
         }
 
 
-        void AddOnMouseMove(std::function<bool(const EventTargets*)> func, EventInfo info = { nullptr, "" })
+        EventSubscription<bool, const EventTargets*> SubscribeOnMouseMove(std::function<bool(const EventTargets*)> func)
         {
-            _mouseMoveHandlers.Add(func, info);
+            return _mouseMoveHandlers->Subscribe(func);
         }
 
-        void AddOnLeftPressed(std::function<bool(const EventTargets*)> func, EventInfo info = { nullptr, "" })
+        EventSubscription<bool, const EventTargets*> SubscribeOnLeftPressed(std::function<bool(const EventTargets*)> func)
         {
-            _leftPressedHandlers.Add(func, info);
+            return _leftPressedHandlers->Subscribe(func);
         }
 
-        void AddOnLeftReleased(std::function<bool(const EventTargets*)> func, EventInfo info = { nullptr, "" })
+        EventSubscription<bool, const EventTargets*> SubscribeOnLeftReleased(std::function<bool(const EventTargets*)> func)
         {
-            _leftReleasedHandlers.Add(func, info);
+            return _leftReleasedHandlers->Subscribe(func);
         }
 
-        void AddOnRightPressed(std::function<bool(const EventTargets*)> func, EventInfo info = { nullptr, "" })
+        EventSubscription<bool, const EventTargets*> SubscribeOnRightPressed(std::function<bool(const EventTargets*)> func)
         {
-            _rightPressedHandlers.Add(func, info);
+            return _rightPressedHandlers->Subscribe(func);
         }
 
-        void AddOnRightReleased(std::function<bool(const EventTargets*)> func, EventInfo info = { nullptr, "" })
+        EventSubscription<bool, const EventTargets*> SubscribeOnRightReleased(std::function<bool(const EventTargets*)> func)
         {
-            _rightReleasedHandlers.Add(func, info);
+            return _rightReleasedHandlers->Subscribe(func);
         }
 
-        void AddOnWheelUp(std::function<bool(const EventTargets*)> func, EventInfo info = { nullptr, "" })
+        EventSubscription<bool, const EventTargets*> SubscribeOnWheelUp(std::function<bool(const EventTargets*)> func)
         {
-            _wheelUpHandlers.Add(func, info);
+            return _wheelUpHandlers->Subscribe(func);
         }
 
-        void AddOnWheelDown(std::function<bool(const EventTargets*)> func, EventInfo info = { nullptr, "" })
+        EventSubscription<bool, const EventTargets*> SubscribeOnWheelDown(std::function<bool(const EventTargets*)> func)
         {
-            _wheelDownHandlers.Add(func, info);
-        }
-
-        void RemoveOnMouseMove(EventInfo info)
-        {
-            _mouseMoveHandlers.Remove(info);
-        }
-
-        void RemoveOnLeftPressed(EventInfo info)
-        {
-            _leftPressedHandlers.Remove(info);
-        }
-
-        void RemoveOnLeftReleased(EventInfo info)
-        {
-            _leftReleasedHandlers.Remove(info);
-        }
-
-        void RemoveOnRightPressed(EventInfo info)
-        {
-            _rightPressedHandlers.Remove(info);
-        }
-
-        void RemoveOnRightReleased(EventInfo info)
-        {
-            _rightReleasedHandlers.Remove(info);
-        }
-
-        void RemoveOnWheelUp(EventInfo info)
-        {
-            _wheelUpHandlers.Remove(info);
-        }
-
-        void RemoveOnWheelDown(EventInfo info)
-        {
-            _wheelDownHandlers.Remove(info);
+            return _wheelDownHandlers->Subscribe(func);
         }
     };
 }

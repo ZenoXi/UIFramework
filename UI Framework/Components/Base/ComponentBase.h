@@ -10,7 +10,7 @@
 #include "Window/Graphics.h"
 #include "Window/CursorIcon.h"
 #include "Window/MouseEventHandler.h"
-#include "Helper/Event.h"
+#include "Helper/EventEmitter.h"
 #include "Helper/Time.h"
 
 namespace zcom
@@ -36,7 +36,7 @@ namespace zcom
     {
     public:
         virtual ~Property() {};
-        bool valid;
+        bool valid = true;
     };
 
     class Component;
@@ -60,11 +60,11 @@ namespace zcom
             // Reserve initial capacity to prevent reallocations in most cases
             _targets.reserve(16);
         }
-        EventTargets(EventTargets&& other)
+        EventTargets(EventTargets&& other) noexcept
         {
             _targets = std::move(other._targets);
         }
-        EventTargets& operator=(EventTargets&& other)
+        EventTargets& operator=(EventTargets&& other) noexcept
         {
             if (this != &other)
             {
@@ -131,6 +131,14 @@ namespace zcom
     public:
         // Releases the resource and removes the reference
         void SafeFullRelease(IUnknown** res);
+
+        // Adds specified function to queue of pending actions, which get executed
+        // in the component thread right before the component update function
+        void ExecuteSynchronously(std::function<void()>&& func)
+        {
+            std::lock_guard<std::mutex> lock(_m_pendingActions);
+            _pendingActions.push_back(std::move(func));
+        }
 
         // Component creation
         template<class T, typename... Args>
@@ -211,6 +219,10 @@ namespace zcom
         // Other properties
         std::unordered_map<std::string, std::unique_ptr<Property>> _properties;
 
+        // Synchronous execution
+        std::vector<std::function<void()>> _pendingActions;
+        std::mutex _m_pendingActions;
+
         // Mouse events
         bool _mouseInside = false;
         bool _mouseInsideArea = false;
@@ -221,33 +233,33 @@ namespace zcom
 
     protected:
         // Pre default handling
-        Event<void, Component*, int, int> _onMouseMove;
-        Event<void, Component*> _onMouseEnter;
-        Event<void, Component*> _onMouseEnterArea;
-        Event<void, Component*> _onMouseLeave;
-        Event<void, Component*> _onMouseLeaveArea;
-        Event<void, Component*, int, int> _onLeftPressed;
-        Event<void, Component*, int, int> _onRightPressed;
-        Event<void, Component*, int, int> _onLeftReleased;
-        Event<void, Component*, int, int> _onRightReleased;
-        Event<void, Component*, int, int> _onWheelUp;
-        Event<void, Component*, int, int> _onWheelDown;
-        Event<void, Component*, bool> _onSelected;
-        Event<void, Component*> _onDeselected;
-        Event<void, Component*, Graphics> _onDraw;
+        EventEmitter<void, Component*, int, int> _onMouseMove;
+        EventEmitter<void, Component*> _onMouseEnter;
+        EventEmitter<void, Component*> _onMouseEnterArea;
+        EventEmitter<void, Component*> _onMouseLeave;
+        EventEmitter<void, Component*> _onMouseLeaveArea;
+        EventEmitter<void, Component*, int, int> _onLeftPressed;
+        EventEmitter<void, Component*, int, int> _onRightPressed;
+        EventEmitter<void, Component*, int, int> _onLeftReleased;
+        EventEmitter<void, Component*, int, int> _onRightReleased;
+        EventEmitter<void, Component*, int, int> _onWheelUp;
+        EventEmitter<void, Component*, int, int> _onWheelDown;
+        EventEmitter<void, Component*, bool> _onSelected;
+        EventEmitter<void, Component*> _onDeselected;
+        EventEmitter<void, Component*, Graphics> _onDraw;
 
         // Post default handling
-        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postMouseMove;
-        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postLeftPressed;
-        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postRightPressed;
-        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postLeftReleased;
-        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postRightReleased;
-        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postWheelUp;
-        Event<void, Component*, std::vector<EventTargets::Params>, int, int> _postWheelDown;
-        Event<void, Component*, Graphics> _postDraw;
+        EventEmitter<void, Component*, std::vector<EventTargets::Params>, int, int> _postMouseMove;
+        EventEmitter<void, Component*, std::vector<EventTargets::Params>, int, int> _postLeftPressed;
+        EventEmitter<void, Component*, std::vector<EventTargets::Params>, int, int> _postRightPressed;
+        EventEmitter<void, Component*, std::vector<EventTargets::Params>, int, int> _postLeftReleased;
+        EventEmitter<void, Component*, std::vector<EventTargets::Params>, int, int> _postRightReleased;
+        EventEmitter<void, Component*, std::vector<EventTargets::Params>, int, int> _postWheelUp;
+        EventEmitter<void, Component*, std::vector<EventTargets::Params>, int, int> _postWheelDown;
+        EventEmitter<void, Component*, Graphics> _postDraw;
 
         // Layout events
-        Event<void> _onLayoutChanged;
+        EventEmitter<void> _onLayoutChanged;
 
     public:
         Component(Scene* scene) : _scene(scene) {}
@@ -286,7 +298,7 @@ namespace zcom
             _vPosAlign = vertical;
 
             if (changed)
-                _onLayoutChanged.InvokeAll();
+                _onLayoutChanged->InvokeAll();
         }
         void SetHorizontalOffsetPercent(float offset)
         {
@@ -306,7 +318,7 @@ namespace zcom
             _vPosPercentOffset = vertical;
 
             if (changed)
-                _onLayoutChanged.InvokeAll();
+                _onLayoutChanged->InvokeAll();
         }
         void SetHorizontalOffsetPixels(int offset)
         {
@@ -326,7 +338,7 @@ namespace zcom
             _vPosPixelOffset = vertical;
 
             if (changed)
-                _onLayoutChanged.InvokeAll();
+                _onLayoutChanged->InvokeAll();
         }
 
         // Size description
@@ -353,7 +365,7 @@ namespace zcom
             _vSizeParentPercent = height;
 
             if (changed)
-                _onLayoutChanged.InvokeAll();
+                _onLayoutChanged->InvokeAll();
         }
         void SetBaseWidth(int width)
         {
@@ -373,7 +385,7 @@ namespace zcom
             _vSize = height;
 
             if (changed)
-                _onLayoutChanged.InvokeAll();
+                _onLayoutChanged->InvokeAll();
         }
 
         // Common
@@ -677,9 +689,9 @@ namespace zcom
             int deltaY = y - _mousePosY;
             _mousePosX = x;
             _mousePosY = y;
-            _onMouseMove.InvokeAll(this, deltaX, deltaY);
+            _onMouseMove->InvokeAll(this, deltaX, deltaY);
             auto targets = _OnMouseMove(deltaX, deltaY);
-            _postMouseMove.InvokeAll(this, targets.GetTargets(), deltaX, deltaY);
+            _postMouseMove->InvokeAll(this, targets.GetTargets(), deltaX, deltaY);
 
             if (!targets.Empty())
                 OnMouseEnter();
@@ -705,7 +717,7 @@ namespace zcom
                 return;
 
             _mouseInside = true;
-            _onMouseEnter.InvokeAll(this);
+            _onMouseEnter->InvokeAll(this);
             _OnMouseEnter();
         }
         void OnMouseLeave()
@@ -716,7 +728,7 @@ namespace zcom
                 return;
 
             _mouseInside = false;
-            _onMouseLeave.InvokeAll(this);
+            _onMouseLeave->InvokeAll(this);
             _OnMouseLeave();
             _hoverWaiting = false;
         }
@@ -728,7 +740,7 @@ namespace zcom
                 return;
 
             _mouseInsideArea = true;
-            _onMouseEnterArea.InvokeAll(this);
+            _onMouseEnterArea->InvokeAll(this);
             _OnMouseEnterArea();
         }
         void OnMouseLeaveArea()
@@ -739,7 +751,7 @@ namespace zcom
                 return;
 
             _mouseInsideArea = false;
-            _onMouseLeaveArea.InvokeAll(this);
+            _onMouseLeaveArea->InvokeAll(this);
             _OnMouseLeaveArea();
         }
         EventTargets OnLeftPressed(int x, int y)
@@ -752,9 +764,9 @@ namespace zcom
                 OnMouseMove(x, y);
 
             _mouseLeftClicked = true;
-            _onLeftPressed.InvokeAll(this, x, y);
+            _onLeftPressed->InvokeAll(this, x, y);
             auto targets = _OnLeftPressed(x, y);
-            _postLeftPressed.InvokeAll(this, targets.GetTargets(), x, y);
+            _postLeftPressed->InvokeAll(this, targets.GetTargets(), x, y);
             return targets;
         }
         EventTargets OnLeftReleased(int x = std::numeric_limits<int>::min(), int y = std::numeric_limits<int>::min())
@@ -768,9 +780,9 @@ namespace zcom
                     OnMouseMove(x, y);
 
             _mouseLeftClicked = false;
-            _onLeftReleased.InvokeAll(this, x, y);
+            _onLeftReleased->InvokeAll(this, x, y);
             auto targets = _OnLeftReleased(x, y);
-            _postLeftReleased.InvokeAll(this, targets.GetTargets(), x, y);
+            _postLeftReleased->InvokeAll(this, targets.GetTargets(), x, y);
             return targets;
         }
         EventTargets OnRightPressed(int x, int y)
@@ -783,9 +795,9 @@ namespace zcom
                 OnMouseMove(x, y);
 
             _mouseRightClicked = true;
-            _onRightPressed.InvokeAll(this, x, y);
+            _onRightPressed->InvokeAll(this, x, y);
             auto targets = _OnRightPressed(x, y);
-            _postRightPressed.InvokeAll(this, targets.GetTargets(), x, y);
+            _postRightPressed->InvokeAll(this, targets.GetTargets(), x, y);
             return targets;
         }
         EventTargets OnRightReleased(int x = std::numeric_limits<int>::min(), int y = std::numeric_limits<int>::min())
@@ -799,9 +811,9 @@ namespace zcom
                     OnMouseMove(x, y);
 
             _mouseRightClicked = false;
-            _onRightReleased.InvokeAll(this, x, y);
+            _onRightReleased->InvokeAll(this, x, y);
             auto targets = _OnRightReleased(x, y);
-            _postRightReleased.InvokeAll(this, targets.GetTargets(), x, y);
+            _postRightReleased->InvokeAll(this, targets.GetTargets(), x, y);
             return targets;
         }
         EventTargets OnWheelUp(int x, int y)
@@ -809,9 +821,9 @@ namespace zcom
             if (!_active)
                 return EventTargets();
 
-            _onWheelUp.InvokeAll(this, x, y);
+            _onWheelUp->InvokeAll(this, x, y);
             auto targets = _OnWheelUp(x, y);
-            _postWheelUp.InvokeAll(this, targets.GetTargets(), x, y);
+            _postWheelUp->InvokeAll(this, targets.GetTargets(), x, y);
             return targets;
         }
         EventTargets OnWheelDown(int x, int y)
@@ -819,9 +831,9 @@ namespace zcom
             if (!_active)
                 return EventTargets();
 
-            _onWheelDown.InvokeAll(this, x, y);
+            _onWheelDown->InvokeAll(this, x, y);
             auto targets = _OnWheelDown(x, y);
-            _postWheelDown.InvokeAll(this, targets.GetTargets(), x, y);
+            _postWheelDown->InvokeAll(this, targets.GetTargets(), x, y);
             return targets;
         }
         void OnSelected(bool reverse = false)
@@ -833,7 +845,7 @@ namespace zcom
 
             _selected = true;
             _redraw = true;
-            _onSelected.InvokeAll(this, reverse);
+            _onSelected->InvokeAll(this, reverse);
             _OnSelected(reverse);
         }
         void OnDeselected()
@@ -845,7 +857,7 @@ namespace zcom
 
             _selected = false;
             _redraw = true;
-            _onDeselected.InvokeAll(this);
+            _onDeselected->InvokeAll(this);
             _OnDeselected();
         }
     protected:
@@ -870,201 +882,118 @@ namespace zcom
         int GetMousePosX() const { return _mousePosX; }
         int GetMousePosY() const { return _mousePosY; }
 
-        void AddOnMouseMove(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, int, int> SubscribeOnMouseMove(std::function<void(Component*, int, int)> handler)
         {
-            _onMouseMove.Add(handler, info);
+            return _onMouseMove->Subscribe(handler);
         }
-        void AddOnMouseEnter(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*> SubscribeOnMouseEnter(std::function<void(Component*)> handler)
         {
-            _onMouseEnter.Add(handler, info);
+            return _onMouseEnter->Subscribe(handler);
         }
-        void AddOnMouseLeave(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*> SubscribeOnMouseLeave(std::function<void(Component*)> handler)
         {
-            _onMouseLeave.Add(handler, info);
+            return _onMouseLeave->Subscribe(handler);
         }
-        void AddOnMouseEnterArea(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*> SubscribeOnMouseEnterArea(std::function<void(Component*)> handler)
         {
-            _onMouseEnterArea.Add(handler, info);
+            return _onMouseEnterArea->Subscribe(handler);
         }
-        void AddOnMouseLeaveArea(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*> SubscribeOnMouseLeaveArea(std::function<void(Component*)> handler)
         {
-            _onMouseLeaveArea.Add(handler, info);
+            return _onMouseLeaveArea->Subscribe(handler);
         }
-        void AddOnLeftPressed(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, int, int> SubscribeOnLeftPressed(std::function<void(Component*, int, int)> handler)
         {
-            _onLeftPressed.Add(handler, info);
+            return _onLeftPressed->Subscribe(handler);
         }
-        void AddOnRightPressed(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, int, int> SubscribeOnRightPressed(std::function<void(Component*, int, int)> handler)
         {
-            _onRightPressed.Add(handler, info);
+            return _onRightPressed->Subscribe(handler);
         }
-        void AddOnLeftReleased(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, int, int> SubscribeOnLeftReleased(std::function<void(Component*, int, int)> handler)
         {
-            _onLeftReleased.Add(handler, info);
+            return _onLeftReleased->Subscribe(handler);
         }
-        void AddOnRightReleased(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, int, int> SubscribeOnRightReleased(std::function<void(Component*, int, int)> handler)
         {
-            _onRightReleased.Add(handler, info);
+            return _onRightReleased->Subscribe(handler);
         }
-        void AddOnWheelUp(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, int, int> SubscribeOnWheelUp(std::function<void(Component*, int, int)> handler)
         {
-            _onWheelUp.Add(handler, info);
+            return _onWheelUp->Subscribe(handler);
         }
-        void AddOnWheelDown(std::function<void(Component*, int, int)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, int, int> SubscribeOnWheelDown(std::function<void(Component*, int, int)> handler)
         {
-            _onWheelDown.Add(handler, info);
+            return _onWheelDown->Subscribe(handler);
         }
-        void AddOnSelected(std::function<void(Component*, bool)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, bool> SubscribeOnSelected(std::function<void(Component*, bool)> handler)
         {
-            _onSelected.Add(handler, info);
+            return _onSelected->Subscribe(handler);
         }
-        void AddOnDeselected(std::function<void(Component*)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*> SubscribeOnDeselected(std::function<void(Component*)> handler)
         {
-            _onDeselected.Add(handler, info);
+            return _onDeselected->Subscribe(handler);
         }
-        void AddOnDraw(std::function<void(Component*, Graphics)> handler, EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, Graphics> SubscribeOnDraw(std::function<void(Component*, Graphics)> handler)
         {
-            _onDraw.Add(handler, info);
-        }
-
-        void AddPostMouseMove(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
-        {
-            _postMouseMove.Add(handler, info);
-        }
-        void AddPostLeftPressed(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
-        {
-            _postLeftPressed.Add(handler, info);
-        }
-        void AddPostRightPressed(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
-        {
-            _postRightPressed.Add(handler, info);
-        }
-        void AddPostLeftReleased(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
-        {
-            _postLeftReleased.Add(handler, info);
-        }
-        void AddPostRightReleased(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
-        {
-            _postRightReleased.Add(handler, info);
-        }
-        void AddPostWheelUp(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
-        {
-            _postWheelUp.Add(handler, info);
-        }
-        void AddPostWheelDown(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler, EventInfo info = { nullptr, "" })
-        {
-            _postWheelDown.Add(handler, info);
-        }
-        void AddPostDraw(std::function<void(Component*, Graphics)> handler, EventInfo info = { nullptr, "" })
-        {
-            _postDraw.Add(handler, info);
+            return _onDraw->Subscribe(handler);
         }
 
-        void RemoveOnMouseMove(EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, std::vector<EventTargets::Params>, int, int> SubscribePostMouseMove(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler)
         {
-            _onMouseMove.Remove(info);
+            return _postMouseMove->Subscribe(handler);
         }
-        void RemoveOnMouseEnter(EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, std::vector<EventTargets::Params>, int, int> SubscribePostLeftPressed(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler)
         {
-            _onMouseEnter.Remove(info);
+            return _postLeftPressed->Subscribe(handler);
         }
-        void RemoveOnMouseLeave(EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, std::vector<EventTargets::Params>, int, int> SubscribePostRightPressed(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler)
         {
-            _onMouseLeave.Remove(info);
+            return _postRightPressed->Subscribe(handler);
         }
-        void RemoveOnMouseEnterArea(EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, std::vector<EventTargets::Params>, int, int> SubscribePostLeftReleased(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler)
         {
-            _onMouseEnterArea.Remove(info);
+            return _postLeftReleased->Subscribe(handler);
         }
-        void RemoveOnMouseLeaveArea(EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, std::vector<EventTargets::Params>, int, int> SubscribePostRightReleased(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler)
         {
-            _onMouseLeaveArea.Remove(info);
+            return _postRightReleased->Subscribe(handler);
         }
-        void RemoveOnLeftPressed(EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, std::vector<EventTargets::Params>, int, int> SubscribePostWheelUp(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler)
         {
-            _onLeftPressed.Remove(info);
+            return _postWheelUp->Subscribe(handler);
         }
-        void RemoveOnRightPressed(EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, std::vector<EventTargets::Params>, int, int> SubscribePostWheelDown(std::function<void(Component*, std::vector<EventTargets::Params>, int, int)> handler)
         {
-            _onRightPressed.Remove(info);
+            return _postWheelDown->Subscribe(handler);
         }
-        void RemoveOnLeftReleased(EventInfo info = { nullptr, "" })
+        EventSubscription<void, Component*, Graphics> SubscribePostDraw(std::function<void(Component*, Graphics)> handler)
         {
-            _onLeftReleased.Remove(info);
-        }
-        void RemoveOnRightReleased(EventInfo info = { nullptr, "" })
-        {
-            _onRightReleased.Remove(info);
-        }
-        void RemoveOnWheelUp(EventInfo info = { nullptr, "" })
-        {
-            _onWheelUp.Remove(info);
-        }
-        void RemoveOnWheelDown(EventInfo info = { nullptr, "" })
-        {
-            _onWheelDown.Remove(info);
-        }
-        void RemoveOnSelected(EventInfo info = { nullptr, "" })
-        {
-            _onSelected.Remove(info);
-        }
-        void RemoveOnDeselected(EventInfo info = { nullptr, "" })
-        {
-            _onDeselected.Remove(info);
-        }
-        void RemoveOnDraw(EventInfo info = { nullptr, "" })
-        {
-            _onDraw.Remove(info);
-        }
-
-        void RemovePostMouseMove(EventInfo info = { nullptr, "" })
-        {
-            _postMouseMove.Remove(info);
-        }
-        void RemovePostLeftPressed(EventInfo info = { nullptr, "" })
-        {
-            _postLeftPressed.Remove(info);
-        }
-        void RemovePostRightPressed(EventInfo info = { nullptr, "" })
-        {
-            _postRightPressed.Remove(info);
-        }
-        void RemovePostLeftReleased(EventInfo info = { nullptr, "" })
-        {
-            _postLeftReleased.Remove(info);
-        }
-        void RemovePostRightReleased(EventInfo info = { nullptr, "" })
-        {
-            _postRightReleased.Remove(info);
-        }
-        void RemovePostWheelUp(EventInfo info = { nullptr, "" })
-        {
-            _postWheelUp.Remove(info);
-        }
-        void RemovePostWheelDown(EventInfo info = { nullptr, "" })
-        {
-            _postWheelDown.Remove(info);
-        }
-        void RemovePostDraw(EventInfo info = { nullptr, "" })
-        {
-            _postDraw.Remove(info);
+            return _postDraw->Subscribe(handler);
         }
 
         // Layout events
-        void AddOnLayoutChanged(std::function<void()> handler, EventInfo info = { nullptr, "" })
+        auto SubscribeOnLayoutChanged(std::function<void()> handler)
         {
-            _onLayoutChanged.Add(handler, info);
-        }
-
-        void RemoveOnLayoutChanged(EventInfo info = { nullptr, "" })
-        {
-            _onLayoutChanged.Remove(info);
+            return _onLayoutChanged->Subscribe(handler);
         }
 
         // Main functions
         void Update()
         {
             if (!_active) return;
+
+            // Execute pending actions
+            // A (possibly expensive, but not relevant for now) copy of the pending actions is
+            // created to allow the pending action itself call 'ExecutePending'.
+            // TODO: This safeguard is not always necessary, so it would make sense to provide
+            // the ability to disable this behavior for a component (or maybe opt-in)
+            std::unique_lock<std::mutex> lock(_m_pendingActions);
+            std::vector<std::function<void()>> pendingActionsCopy = _pendingActions;
+            _pendingActions.clear();
+            lock.unlock();
+            for (auto& action : pendingActionsCopy)
+                action();
 
             // Show hover text
             if (_hoverWaiting && (ztime::Main() - _hoverStart) >= _hoverTextDelay)
@@ -1118,7 +1047,7 @@ namespace zcom
             if (_visible)
             {
                 // Invoke pre draw handlers
-                _onDraw.InvokeAll(this, g);
+                _onDraw->InvokeAll(this, g);
 
                 ID2D1Image* stash = nullptr;
                 ID2D1Bitmap1* contentBitmap = nullptr;
@@ -1223,8 +1152,8 @@ namespace zcom
                     roundedrect.radiusY = _cornerRounding;
                     roundedrect.rect.left = 0;
                     roundedrect.rect.top = 0;
-                    roundedrect.rect.right = _width;
-                    roundedrect.rect.bottom = _height;
+                    roundedrect.rect.right = (float)_width;
+                    roundedrect.rect.bottom = (float)_height;
                     ID2D1SolidColorBrush* opacityBrush;
                     g.target->CreateSolidColorBrush(D2D1::ColorF(0), &opacityBrush);
                     g.target->FillRoundedRectangle(roundedrect, opacityBrush);
@@ -1292,7 +1221,7 @@ namespace zcom
                 }
 
                 // Invoke post draw handlers
-                _postDraw.InvokeAll(this, g);
+                _postDraw->InvokeAll(this, g);
             }
             else if (_Redraw())
             {

@@ -2,7 +2,7 @@
 
 #include "ComponentBase.h"
 
-#include "Helper/Event.h"
+#include "Helper/EventEmitter.h"
 #include "Window/KeyboardEventHandler.h"
 
 namespace zcom
@@ -13,7 +13,7 @@ namespace zcom
         bool Checked() const { return _checked; }
         void Checked(bool checked);
         void SetCheckColor(D2D1_COLOR_F checkColor);
-        void AddOnStateChanged(const std::function<void(bool)>& handler);
+        EventSubscription<void, bool> SubscribeOnStateChanged(const std::function<void(bool)>& handler);
 
     protected:
         friend class Scene;
@@ -28,7 +28,7 @@ namespace zcom
         Checkbox& operator=(const Checkbox&) = delete;
 
     private:
-        Event<void, bool> _onStateChanged;
+        EventEmitter<void, bool> _onStateChanged;
         D2D1_COLOR_F _checkColor = {};
         bool _checked = false;
 

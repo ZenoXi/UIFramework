@@ -22,9 +22,9 @@ void zcom::Checkbox::SetCheckColor(D2D1_COLOR_F checkColor)
         InvokeRedraw();
 }
 
-void zcom::Checkbox::AddOnStateChanged(const std::function<void(bool)>& handler)
+EventSubscription<void, bool> zcom::Checkbox::SubscribeOnStateChanged(const std::function<void(bool)>& handler)
 {
-    _onStateChanged.Add(handler);
+    return _onStateChanged->Subscribe(handler);
 }
 
 void zcom::Checkbox::Init(bool checked)
@@ -80,7 +80,7 @@ void zcom::Checkbox::_OnDraw(Graphics g)
 zcom::EventTargets zcom::Checkbox::_OnLeftPressed(int x, int y)
 {
     Checked(!Checked());
-    _onStateChanged.InvokeAll(Checked());
+    _onStateChanged->InvokeAll(Checked());
     InvokeRedraw();
     return EventTargets().Add(this, x, y);
 }
@@ -90,7 +90,7 @@ bool zcom::Checkbox::_OnKeyDown(BYTE vkCode)
     if (vkCode == VK_RETURN)
     {
         Checked(!Checked());
-        _onStateChanged.InvokeAll(Checked());
+        _onStateChanged->InvokeAll(Checked());
         return true;
     }
     return false;

@@ -5,7 +5,7 @@
 #include "Image.h"
 #include "../ComHelper.h"
 
-#include "Helper/Event.h"
+#include "Helper/EventEmitter.h"
 #include "Window/KeyboardEventHandler.h"
 
 namespace zcom
@@ -133,7 +133,7 @@ namespace zcom
             if (_activation == ButtonActivation::PRESS || _activation == ButtonActivation::PRESS_AND_RELEASE)
             {
                 _activated = true;
-                _OnActivated.InvokeAll();
+                _onActivated->InvokeAll();
             }
             InvokeRedraw();
             return EventTargets().Add(this, x, y);
@@ -146,7 +146,7 @@ namespace zcom
                 if (_activation == ButtonActivation::RELEASE || _activation == ButtonActivation::PRESS_AND_RELEASE)
                 {
                     _activated = true;
-                    _OnActivated.InvokeAll();
+                    _onActivated->InvokeAll();
                 }
             }
             InvokeRedraw();
@@ -166,7 +166,7 @@ namespace zcom
         {
             if (vkCode == VK_RETURN)
             {
-                _OnActivated.InvokeAll();
+                _onActivated->InvokeAll();
                 return true;
             }
             return false;
@@ -190,7 +190,7 @@ namespace zcom
     private:
         bool _activated = false;
         ButtonActivation _activation = ButtonActivation::RELEASE;
-        Event<void> _OnActivated;
+        EventEmitter<void> _onActivated;
 
         bool _hovered = false;
 
@@ -377,9 +377,9 @@ namespace zcom
             }
         }
 
-        void SetOnActivated(const std::function<void()>& func)
+        EventSubscription<void> SubscribeOnActivated(const std::function<void()>& func)
         {
-            _OnActivated.Add(func);
+            return _onActivated->Subscribe(func);
         }
 
         void SetActivation(ButtonActivation activation)
