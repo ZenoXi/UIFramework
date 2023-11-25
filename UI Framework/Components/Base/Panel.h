@@ -148,7 +148,7 @@ namespace zcom
                 InvokeRedraw();
             }
 
-            for (auto item : _items)
+            for (auto& item : _items)
             {
                 item.item->Update();
             }
@@ -177,31 +177,31 @@ namespace zcom
             //}
 
             // Get bitmaps of all items
-            std::list<std::pair<ID2D1Bitmap*, Item>> bitmaps;
+            std::list<std::pair<ID2D1Bitmap*, Component*>> bitmaps;
             for (auto& item : _items)
             {
                 // Order by z-index
                 auto it = bitmaps.rbegin();
                 for (; it != bitmaps.rend(); it++)
                 {
-                    if (item.item->GetZIndex() >= it->second.item->GetZIndex())
+                    if (item.item->GetZIndex() >= it->second->GetZIndex())
                     {
                         break;
                     }
                 }
                 if (item.item->Redraw())
                     item.item->Draw(g);
-                bitmaps.insert(it.base(), { item.item->ContentImage(), item });
+                bitmaps.insert(it.base(), { item.item->ContentImage(), item.item });
             }
 
             // Draw the bitmaps
             for (auto& it : bitmaps)
             {
-                if (it.second.item->GetOpacity() <= 0.0f || !it.second.item->GetVisible())
+                if (it.second->GetOpacity() <= 0.0f || !it.second->GetVisible())
                     continue;
 
                 // Draw shadow
-                auto prop = it.second.item->GetProperty<PROP_Shadow>();
+                auto prop = it.second->GetProperty<PROP_Shadow>();
                 if (prop.valid)
                 {
                     ID2D1Effect* shadowEffect = nullptr;
@@ -210,19 +210,19 @@ namespace zcom
                     shadowEffect->SetValue(D2D1_SHADOW_PROP_COLOR, D2D1::Vector4F(prop.color.r, prop.color.g, prop.color.b, prop.color.a));
                     shadowEffect->SetValue(D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, prop.blurStandardDeviation);
 
-                    if (it.second.item->GetOpacity() < 1.0f)
+                    if (it.second->GetOpacity() < 1.0f)
                     {
 #ifdef CLSID_D2D1Opacity
                         ID2D1Effect* opacityEffect = nullptr;
                         g.target->CreateEffect(CLSID_D2D1Opacity, &opacityEffect);
-                        opacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, it.second.item->GetOpacity());
+                        opacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, it.second->GetOpacity());
 
                         ID2D1Effect* compositeEffect = nullptr;
                         g.target->CreateEffect(CLSID_D2D1Composite, &compositeEffect);
                         compositeEffect->SetInputEffect(0, shadowEffect);
                         compositeEffect->SetInputEffect(1, opacityEffect);
 
-                        g.target->DrawImage(compositeEffect, D2D1::Point2F(it.second.item->GetX() + prop.offsetX, it.second.item->GetY() + prop.offsetY));
+                        g.target->DrawImage(compositeEffect, D2D1::Point2F(it.second->GetX() + prop.offsetX, it.second->GetY() + prop.offsetY));
                         compositeEffect->Release();
                         opacityEffect->Release();
 #else
@@ -243,17 +243,17 @@ namespace zcom
                         g.target->GetTarget(&stash);
                         g.target->SetTarget(contentBitmap);
                         g.target->Clear();
-                        g.target->DrawImage(shadowEffect, D2D1::Point2F(it.second.item->GetX() + prop.offsetX, it.second.item->GetY() + prop.offsetY));
+                        g.target->DrawImage(shadowEffect, D2D1::Point2F(it.second->GetX() + prop.offsetX, it.second->GetY() + prop.offsetY));
                         g.target->SetTarget(stash);
                         stash->Release();
-                        g.target->DrawBitmap(contentBitmap, (const D2D1_RECT_F*)0, it.second.item->GetOpacity());
+                        g.target->DrawBitmap(contentBitmap, (const D2D1_RECT_F*)0, it.second->GetOpacity());
 
                         contentBitmap->Release();
 #endif
                     }
                     else
                     {
-                        g.target->DrawImage(shadowEffect, D2D1::Point2F(it.second.item->GetX() + prop.offsetX, it.second.item->GetY() + prop.offsetY));
+                        g.target->DrawImage(shadowEffect, D2D1::Point2F(it.second->GetX() + prop.offsetX, it.second->GetY() + prop.offsetY));
                     }
                     shadowEffect->Release();
                 }
@@ -261,12 +261,12 @@ namespace zcom
                 g.target->DrawBitmap(
                     it.first,
                     D2D1::RectF(
-                        it.second.item->GetX() - _horizontalScrollbar.scrollAmount,
-                        it.second.item->GetY() - _verticalScrollbar.scrollAmount,
-                        it.second.item->GetX() - _horizontalScrollbar.scrollAmount + it.second.item->GetWidth(),
-                        it.second.item->GetY() - _verticalScrollbar.scrollAmount + it.second.item->GetHeight()
+                        it.second->GetX() - _horizontalScrollbar.scrollAmount,
+                        it.second->GetY() - _verticalScrollbar.scrollAmount,
+                        it.second->GetX() - _horizontalScrollbar.scrollAmount + it.second->GetWidth(),
+                        it.second->GetY() - _verticalScrollbar.scrollAmount + it.second->GetHeight()
                     ),
-                    it.second.item->GetOpacity()
+                    it.second->GetOpacity()
                 );
             }
 
@@ -1055,7 +1055,8 @@ namespace zcom
         {
             Component* item;
             bool owned;
-            bool hasShadow;
+            EventSubscription<void> layoutChangeHandler;
+            EventSubscription<void, Component*, bool> selectHandler;
         };
         std::vector<Item> _items;
     private:
@@ -1127,12 +1128,13 @@ namespace zcom
         Panel(const Panel&) = delete;
         Panel& operator=(const Panel&) = delete;
 
-        void AddItem(Component* item, bool transferOwnership = false)
+    protected:
+        void _AddItem(Component* item, bool transferOwnership)
         {
-            _items.push_back({ item, transferOwnership, false });
+            _items.push_back({ item, transferOwnership });
 
             // Add layout change handler
-            item->AddOnLayoutChanged([&, item]()
+            _items.back().layoutChangeHandler = item->SubscribeOnLayoutChanged([&, item]()
             {
                 if (_deferUpdates)
                 {
@@ -1142,16 +1144,16 @@ namespace zcom
                 _RecalculateLayout(GetWidth(), GetHeight());
                 if (GetMouseInside())
                     OnMouseMove(GetMousePosX(), GetMousePosY());
-            }, { this, "" });
+            });
 
             // Add selection handler for scrolling
-            item->AddOnSelected([&](zcom::Component* srcItem, bool reverse)
+            _items.back().selectHandler = item->SubscribeOnSelected([&](zcom::Component* srcItem, bool reverse)
             {
                 // Propagate up, to allow scrolling to nested items
-                _onSelected.InvokeAll(this, reverse);
+                _onSelected->InvokeAll(this, reverse);
 
                 ScrollToItem(srcItem);
-            }, { this, "" });
+            });
 
             ReindexTabOrder();
             if (_deferUpdates)
@@ -1164,14 +1166,23 @@ namespace zcom
                 OnMouseMove(GetMousePosX(), GetMousePosY());
         }
 
+    public:
+        void AddItem(Component* item)
+        {
+            _AddItem(item, false);
+        }
+
+        void AddItem(std::unique_ptr<Component> item)
+        {
+            _AddItem(item.release(), true);
+        }
+
         void RemoveItem(Component* item)
         {
             for (int i = 0; i < _items.size(); i++)
             {
                 if (_items[i].item == item)
                 {
-                    _items[i].item->RemoveOnLayoutChanged({ this, "" });
-                    _items[i].item->RemoveOnSelected({ this, "" });
                     if (_items[i].owned)
                         delete _items[i].item;
                     _items.erase(_items.begin() + i);
@@ -1191,8 +1202,6 @@ namespace zcom
 
         void RemoveItem(int index)
         {
-            _items[index].item->RemoveOnLayoutChanged({ this, "" });
-            _items[index].item->RemoveOnSelected({ this, "" });
             if (_items[index].owned)
                 delete _items[index].item;
             _items.erase(_items.begin() + index);
@@ -1221,8 +1230,6 @@ namespace zcom
         {
             for (int i = 0; i < _items.size(); i++)
             {
-                _items[i].item->RemoveOnLayoutChanged({ this, "" });
-                _items[i].item->RemoveOnSelected({ this, "" });
                 if (_items[i].owned)
                 {
                     delete _items[i].item;
@@ -1285,7 +1292,7 @@ namespace zcom
             }
 
             // Invoke mouse move resending on parent component
-            _onLayoutChanged.InvokeAll();
+            _onLayoutChanged->InvokeAll();
         }
 
         void DisableMouseEventFallthrough()
@@ -1293,7 +1300,7 @@ namespace zcom
             _fallthroughMouseEvents = false;
 
             // Invoke mouse move resending on parent component
-            _onLayoutChanged.InvokeAll();
+            _onLayoutChanged->InvokeAll();
         }
 
         void ReindexTabOrder()

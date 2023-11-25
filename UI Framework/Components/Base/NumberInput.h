@@ -49,7 +49,7 @@ namespace zcom
                 return;
 
             _value = value;
-            _valueChangedEvent.InvokeAll(_value);
+            _valueChangedEvent->InvokeAll(_value);
             _BoundValue();
             _UpdateText();
         }
@@ -88,14 +88,9 @@ namespace zcom
             _BoundValue();
         }
 
-        void AddOnValueChanged(std::function<void(NumberInputValue)> handler, EventInfo info = EventInfo{ nullptr, "" })
+        EventSubscription<void, NumberInputValue> AddOnValueChanged(std::function<void(NumberInputValue)> handler)
         {
-            _valueChangedEvent.Add(handler, info);
-        }
-
-        void RemoveOnValueChanged(EventInfo info)
-        {
-            _valueChangedEvent.Remove(info);
+            return _valueChangedEvent->Subscribe(handler);
         }
 
 
@@ -123,11 +118,11 @@ namespace zcom
             valueUpButton->ButtonClickImage()->SetTintColor(D2D1::ColorF(D2D1::ColorF::DodgerBlue));
             valueUpButton->SetSelectable(false);
             valueUpButton->SetActivation(zcom::ButtonActivation::PRESS);
-            valueUpButton->SetOnActivated([&]()
+            valueUpButton->SubscribeOnActivated([&]()
             {
                 _UpdateValue();
                 SetValue(_value + _stepSize);
-            });
+            }).Detach();
 
             auto valueDownButton = Create<Button>(L"");
             valueDownButton->SetBaseWidth(19);
@@ -144,14 +139,14 @@ namespace zcom
             valueDownButton->ButtonClickImage()->SetTintColor(D2D1::ColorF(D2D1::ColorF::DodgerBlue));
             valueDownButton->SetSelectable(false);
             valueDownButton->SetActivation(zcom::ButtonActivation::PRESS);
-            valueDownButton->SetOnActivated([&]()
+            valueDownButton->SubscribeOnActivated([&]()
             {
                 _UpdateValue();
                 SetValue(_value - _stepSize);
-            });
+            }).Detach();
 
-            AddItem(valueUpButton.release(), true);
-            AddItem(valueDownButton.release(), true);
+            AddItem(std::move(valueUpButton));
+            AddItem(std::move(valueDownButton));
 
             _value = 0;
             _minValue = std::numeric_limits<int32_t>::min();
@@ -160,11 +155,11 @@ namespace zcom
             _UpdateText();
 
             SetPattern(L"^[-\\.0-9]+$");
-            AddOnTextChanged([&](Label* label, std::wstring& newText)
+            SubscribeOnTextChanged([&](Label* label, std::wstring* newText)
             {
                 if (!_internalChange)
                     _UpdateValue();
-            }, { this, "number_input" });
+            }).Detach();
         }
     public:
         ~NumberInput()
@@ -185,7 +180,7 @@ namespace zcom
 
         bool _internalChange = false;
 
-        Event<void, NumberInputValue> _valueChangedEvent;
+        EventEmitter<void, NumberInputValue> _valueChangedEvent;
 
     private:
         void _UpdateValue()
