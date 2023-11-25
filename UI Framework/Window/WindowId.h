@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <atomic>
+#include <string>
+#include <sstream>
 
 namespace zwnd
 {
@@ -11,6 +13,13 @@ namespace zwnd
         {
             static std::atomic<uint64_t> _ID_COUNTER{ 0 };
             return WindowId(_ID_COUNTER.fetch_add(1));
+        }
+
+        std::string StringValue() const
+        {
+            std::ostringstream ss("");
+            ss << _id;
+            return ss.str();
         }
 
         bool operator==(const WindowId& other)
