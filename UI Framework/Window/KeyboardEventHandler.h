@@ -4,7 +4,7 @@
 #include <string>
 
 #include "WindowsEx.h"
-#include "Helper/Event.h"
+#include "Helper/EventEmitter.h"
 
 #define _KEY_COUNT 256
 // Used for clarity and consistency
@@ -29,82 +29,70 @@ protected:
     virtual bool _OnKeyUp(BYTE vkCode) = 0;
     virtual bool _OnChar(wchar_t ch) = 0;
     
-    Event<bool, int> _OnHotkeyHandlers;
-    Event<bool, BYTE> _OnKeyDownHandlers;
-    Event<bool, BYTE> _OnKeyUpHandlers;
-    Event<bool, wchar_t> _OnCharHandlers;
+    EventEmitter<bool, int> _onHotkeyHandlers;
+    EventEmitter<bool, BYTE> _onKeyDownHandlers;
+    EventEmitter<bool, BYTE> _onKeyUpHandlers;
+    EventEmitter<bool, wchar_t> _onCharHandlers;
 
 public:
     KeyboardEventHandler() {}
 
     bool OnHotkey(int id)
     {
-        for (auto& hnd : _OnHotkeyHandlers)
-        {
-            if (EVENT_HANDLED(hnd(id)))
-            {
-                return true;
-            }
-        }
+        bool handled = _onHotkeyHandlers->InvokeAll([](bool result) { return EVENT_HANDLED(result); }, id);
+        if (handled)
+            return true;
+
         return _OnHotkey(id);
     }
 
     bool OnKeyDown(BYTE vkCode)
     {
         _keyStates[vkCode] = 0x80;
-        for (auto& hnd : _OnKeyDownHandlers)
-        {
-            if (EVENT_HANDLED(hnd(vkCode)))
-            {
-                return true;
-            }
-        }
+        bool handled = _onKeyDownHandlers->InvokeAll([](bool result) { return EVENT_HANDLED(result); }, vkCode);
+        if (handled)
+            return true;
+
         return _OnKeyDown(vkCode);
     }
 
     bool OnKeyUp(BYTE vkCode)
     {
         _keyStates[vkCode] = 0;
-        for (auto& hnd : _OnKeyUpHandlers)
-        {
-            if (EVENT_HANDLED(hnd(vkCode)))
-            {
-                return true;
-            }
-        }
+        bool handled = _onKeyUpHandlers->InvokeAll([](bool result) { return EVENT_HANDLED(result); }, vkCode);
+        if (handled)
+            return true;
+
         return _OnKeyUp(vkCode);
     }
 
     bool OnChar(wchar_t ch)
     {
-        for (auto& hnd : _OnCharHandlers)
-        {
-            if (EVENT_HANDLED(hnd(ch)))
-            {
-                return true;
-            }
-        }
+        bool handled = _onCharHandlers->InvokeAll([](bool result) { return EVENT_HANDLED(result); }, ch);
+        if (handled)
+            return true;
+
         return _OnChar(ch);
     }
 
-    void AddOnHotkey(const std::function<bool(int)>& func)
+    EventSubscription<bool, int> SubscribeOnHotkey(const std::function<bool(int)>& func)
     {
-        _OnHotkeyHandlers.Add(func);
+        return _onHotkeyHandlers->Subscribe(func);
     }
 
-    void AddOnKeyDown(const std::function<bool(BYTE)>& func)
+    EventSubscription<bool, BYTE> SubscribeOnKeyDown(const std::function<bool(BYTE)>& func)
     {
-        _OnKeyDownHandlers.Add(func);
+        _onKeyDownHandlers->Subscribe(func);
     }
 
-    void AddOnKeyUp(const std::function<bool(BYTE)>& func)
+    EventSubscription<bool, BYTE> SubscribeOnKeyUp(const std::function<bool(BYTE)>& func)
     {
-        _OnKeyUpHandlers.Add(func);
+        _onKeyUpHandlers->Subscribe(func);
     }
 
-    void AddOnChar(const std::function<bool(wchar_t)>& func)
+    EventSubscription<bool, wchar_t> SubscribeOnChar(const std::function<bool(wchar_t)>& func)
     {
-        _OnCharHandlers.Add(func);
+        _onCharHandlers->Subscribe(func);
     }
 
     // 'modifiers' specify which modifiers from 'KeyModifiers' enum must be pressed
