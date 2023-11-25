@@ -13,7 +13,7 @@ zcom::Scene::~Scene()
 {
 }
 
-void zcom::Scene::Init(const SceneOptionsBase* options)
+void zcom::Scene::Init(SceneOptionsBase* options)
 {
     _canvas = new zcom::Canvas(Create<Panel>(), 1, 1);
     _Init(options);

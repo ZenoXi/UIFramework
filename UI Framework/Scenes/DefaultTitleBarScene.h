@@ -6,6 +6,7 @@
 #include "Components/Base/Button.h"
 #include "Components/Base/Label.h"
 #include "Components/Base/Image.h"
+#include "Helper/EventEmitter.h"
 
 namespace zcom
 {
@@ -24,6 +25,9 @@ namespace zcom
         void AddIcon(ID2D1Bitmap* icon);
         void AddTitle(std::wstring title);
         void AddMenuButton(std::wstring name);
+
+        void SubscribeToWindowStateChanges();
+        void HandleWindowStateChanges();
 
         // The physical height of the title bar scene
         virtual int TitleBarSceneHeight();
@@ -45,8 +49,12 @@ namespace zcom
         std::unique_ptr<Label> _titleLabel = nullptr;
         std::vector<std::unique_ptr<Button>> _menuButtons;
 
+        D2D1_COLOR_F _activeItemTint = D2D1::ColorF(0);
+        D2D1_COLOR_F _inactiveItemTint = D2D1::ColorF(0.5f, 0.5f, 0.5f);
+        std::unique_ptr<AsyncEventSubscription<bool, zwnd::WindowMessage>> _windowActivationSubscription;
+
     private:
-        void _Init(const SceneOptionsBase* options);
+        void _Init(SceneOptionsBase* options);
         void _Uninit();
         void _Focus();
         void _Unfocus();

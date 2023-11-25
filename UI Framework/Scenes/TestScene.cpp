@@ -6,7 +6,7 @@ zcom::TestScene::TestScene(App* app, zwnd::Window* window)
     : Scene(app, window)
 {}
 
-void zcom::TestScene::_Init(const SceneOptionsBase* options)
+void zcom::TestScene::_Init(SceneOptionsBase* options)
 {
     TestSceneOptions opt;
     if (options)

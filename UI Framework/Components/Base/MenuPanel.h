@@ -3,9 +3,36 @@
 #include "Panel.h"
 #include "MenuItem.h"
 
+#include "Window/WindowId.h"
+#include "Window/WindowMessage.h"
+
+#include <optional>
+#include <future>
+
+// Every menu is contained in its own window, which means opening a child menu requires creating a window.
+// Since components cannot be shared between windows (component rendering is tied to a window specific
+// device context), the content of a child menu must be generated from a template. This template contains
+// a list of nestable MenuItem descriptors. These descriptors contain the item data and logic in the form
+// of lambdas.
+// 
+// When creating a child menu, the child menu subscribes to parent events:
+//  - Close request
+// And the parent subscribes to child events:
+//  - Mouse move
+//
+
 namespace zcom
 {
     class Canvas;
+
+    struct MenuParams
+    {
+        RECT parentRect;
+        MenuTemplate::Menu menuTemplate;
+        std::unique_ptr<AsyncEventSubscription<void>> closeRequestSubscription = nullptr;
+        std::optional<EventEmitter<void>> fullCloseRequestEventEmitter = std::nullopt;
+        std::optional<EventEmitter<void>> mouseMoveEventEmitter = std::nullopt;
+    };
 
     class MenuPanel : public Panel
     {
@@ -18,30 +45,34 @@ namespace zcom
             // Hide panel
             if (_childShouldHide && ztime::Main() - _childHoverEndTime >= _hoverToShowDuration)
             {
-                if (_openChildPanel)
+                if (_childMenuShowing)
                 {
-                    _openChildPanel->Hide();
-                    _openChildPanel = nullptr;
+                    _closeRequestEventEmitter->InvokeAll();
+                    _childMenuShowing = false;
+                    _childItemId = std::nullopt;
                 }
                 _childShouldHide = false;
             }
 
             // Show panel
-            if (_childToShow && ztime::Main() - _childHoverStartTime >= _hoverToShowDuration)
+            if (_childMenuToShow && ztime::Main() - _childHoverStartTime >= _hoverToShowDuration)
             {
-                if (_openChildPanel)
+                if (_childMenuShowing)
                 {
-                    _openChildPanel->Hide();
-                    _openChildPanel = nullptr;
+                    _closeRequestEventEmitter->InvokeAll();
                 }
-                _openChildPanel = _childToShow;
-                _openChildPanel->Show(_sceneCanvas, _parentRect, this);
-                _childToShow = nullptr;
+                _OpenChildMenu(_childMenuToShow.value());
+                _childMenuShowing = true;
+                _childItemId = _childMenuToShow;
+                _childMenuToShow = std::nullopt;
             }
         }
 
         EventTargets _OnMouseMove(int deltaX, int deltaY)
         {
+            // Notify parent menu of mouse movement
+            _mouseMoveEventEmitter->InvokeAll();
+
             auto targets = Panel::_OnMouseMove(deltaX, deltaY);
             Component* mainTarget = targets.MainTarget();
             auto it = std::find_if(_items.begin(), _items.end(), [mainTarget](Item& item) { return item.item == mainTarget; });
@@ -56,19 +87,19 @@ namespace zcom
                     _hoveredItem->SetBackgroundColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.1f));
 
                 // Stop scheduled hide
-                if (_openChildPanel && item->GetMenuPanel() == _openChildPanel)
+                if (_childMenuShowing && item->GetId() == _childItemId.value())
                 {
                     _childShouldHide = false;
                 }
 
                 // Stop scheduled show
-                if (_childToShow && item->GetMenuPanel() != _childToShow)
+                if (_childMenuToShow && item->GetId() != _childMenuToShow.value())
                 {
-                    _childToShow = nullptr;
+                    _childMenuToShow = std::nullopt;
                 }
 
                 // Prime open panel to hide
-                if (_openChildPanel && item->GetMenuPanel() != _openChildPanel)
+                if (_childMenuShowing && item->GetId() != _childItemId.value())
                 {
                     if (!_childShouldHide)
                     {
@@ -78,19 +109,12 @@ namespace zcom
                 }
 
                 // Prime panel to open
-                if (!item->Disabled() && item->GetMenuPanel() && item->GetMenuPanel() != _openChildPanel)
+                if (!item->Disabled() && item->GetMenu() && (!_childItemId.has_value() || item->GetId() != _childItemId.value()))
                 {
-                    if (!_childToShow)
+                    if (!_childMenuToShow)
                     {
-                        _childToShow = item->GetMenuPanel();
+                        _childMenuToShow = item->GetId();
                         _childHoverStartTime = ztime::Main();
-                        // RECT describing this 'item' in MenuPanel plane coordinates
-                        _parentRect = {
-                            GetX() + 0,
-                            GetY() + item->GetY(),
-                            GetX() + GetWidth(),
-                            GetY() + item->GetY() + item->GetHeight()
-                        };
                     }
                 }
             }
@@ -107,6 +131,7 @@ namespace zcom
             {
                 MenuItem* item = (MenuItem*)it->item;
 
+                // Adjust nested menu opening timer to open immediatelly
                 _childHoverEndTime = ztime::Main() - _hoverToShowDuration;
                 _childHoverStartTime = ztime::Main() - _hoverToShowDuration;
 
@@ -145,7 +170,7 @@ namespace zcom
                     }
                 }
 
-                if (!item->GetMenuPanel() &&
+                if (!item->GetMenu() &&
                     !item->IsSeparator() &&
                     !item->Disabled() &&
                     item->CloseOnClick())
@@ -155,57 +180,104 @@ namespace zcom
             return std::move(targets.Add(this, x, y));
         }
 
+        void _OnMouseLeave()
+        {
+            // Stop scheduled child menu open
+            _childMenuToShow = std::nullopt;
+
+            if (_childMenuShowing)
+            {
+                // Unhighlight item only if it is not representing the currently open child menu
+                bool unhighlight = true;
+                for (auto& it : _items)
+                {
+                    if (((MenuItem*)it.item)->GetId() == _childItemId.value())
+                    {
+                        if (_hoveredItem == (MenuItem*)it.item)
+                        {
+                            unhighlight = false;
+                            break;
+                        }
+                    }
+                }
+                if (unhighlight)
+                {
+                    if (_hoveredItem)
+                    {
+                        _hoveredItem->SetBackgroundColor(D2D1::ColorF(0, 0.0f));
+                        _hoveredItem = nullptr;
+                    }
+                }
+            }
+            else
+            {
+                // Unhighlight item
+                if (_hoveredItem)
+                {
+                    _hoveredItem->SetBackgroundColor(D2D1::ColorF(0, 0.0f));
+                    _hoveredItem = nullptr;
+                }
+            }
+        }
+
     public:
         const char* GetName() const { return Name(); }
         static const char* Name() { return "menu_panel"; }
 #pragma endregion
 
     private:
-        Canvas* _sceneCanvas = nullptr;
-        MenuPanel* _parentPanel = nullptr;
-        MenuPanel* _openChildPanel = nullptr;
+        bool _childMenuShowing = false;
+        std::optional<MenuItem::Id> _childItemId = std::nullopt;
         MenuItem* _hoveredItem = nullptr;
 
         RECT _bounds = { 0, 0, 0, 0 };
+        // Parent menu or other source rect in virtual screen coordinates
         RECT _parentRect = { 0, 0, 0, 0 };
         int _maxWidth = 600;
         int _minWidth = 70;
 
         TimePoint _childHoverStartTime = 0;
-        MenuPanel* _childToShow = nullptr;
+        std::optional<MenuItem::Id> _childMenuToShow = std::nullopt;
         TimePoint _childHoverEndTime = 0;
         bool _childShouldHide = false;
 
         TimePoint _showTime = 0;
-        Duration _hoverToShowDuration = Duration(250, MILLISECONDS);
+        Duration _hoverToShowDuration = Duration(200, MILLISECONDS);
 
-        Event<void> _onDestructEvent;
-        Event<void> _onHideEvent;
+        // Parent-child menu communication
+        // 
+        // Close request:
+        // - Parent menu sends a close request to its child when the child should close
+        // Full close request:
+        // - Any menu that encounters the need to close the entire menu chain, sends the full close
+        // - request to the base menu, which in turns closes and sends a close request to its child.
+        // - Only the base menu has the subscription, while every menu in the chain has the emitter
+        // Mouse move event:
+        // - Child menu emits the mouse move event to the parent when a mouse moves in its window
+        //
+
+        EventEmitter<void> _closeRequestEventEmitter;
+        std::unique_ptr<AsyncEventSubscription<void>> _closeRequestSubscription;
+
+        EventEmitter<void> _fullCloseRequestEventEmitter;
+        std::unique_ptr<AsyncEventSubscription<void>> _fullCloseRequestSubscription;
+        
+        EventEmitter<void> _mouseMoveEventEmitter;
+        std::unique_ptr<AsyncEventSubscription<void>> _mouseMoveSubscription;
+
+        std::unique_ptr<AsyncEventSubscription<bool, zwnd::WindowMessage>> _parentWindowClickSubscription;
+
 
     protected:
         friend class Scene;
         friend class Component;
-        MenuPanel(Scene* scene) : Panel(scene) {}
-        void Init()
-        {
-            Panel::Init();
-
-            SetBackgroundColor(D2D1::ColorF(0.05f, 0.05f, 0.05f));
-            SetBorderVisibility(true);
-            SetBorderColor(D2D1::ColorF(0.3f, 0.3f, 0.3f));
-            zcom::PROP_Shadow shadow;
-            shadow.color = D2D1::ColorF(0);
-            shadow.offsetX = 2.0f;
-            shadow.offsetY = 2.0f;
-            SetProperty(shadow);
-            SetVisible(false);
-        }
+        MenuPanel(Scene* scene)
+          : Panel(scene),
+            _closeRequestEventEmitter(EventEmitterThreadMode::MULTITHREADED)
+        {}
+        void Init(MenuParams params);
     public:
-        ~MenuPanel()
-        {
-            _onDestructEvent.InvokeAll();
-            ClearItems();
-        }
+        ~MenuPanel() {}
         MenuPanel(MenuPanel&&) = delete;
         MenuPanel& operator=(MenuPanel&&) = delete;
         MenuPanel(const MenuPanel&) = delete;
@@ -217,6 +289,7 @@ namespace zcom
             {
                 _maxWidth = maxWidth;
                 _RearrangeMenuItems();
+                _CalculatePlacement();
             }
         }
 
@@ -226,13 +299,15 @@ namespace zcom
             {
                 _minWidth = minWidth;
                 _RearrangeMenuItems();
+                _CalculatePlacement();
             }
         }
 
         void AddItem(std::unique_ptr<MenuItem> item)
         {
-            Panel::AddItem(item.release(), true);
+            Panel::AddItem(std::move(item));
             _RearrangeMenuItems();
+            _CalculatePlacement();
         }
 
         MenuItem* GetItem(int index)
@@ -247,60 +322,44 @@ namespace zcom
 
         void ClearItems()
         {
-            Hide();
             Panel::ClearItems();
             _RearrangeMenuItems();
+            _CalculatePlacement();
         }
 
-        void Show(Canvas* sceneCanvas, RECT parentRect, MenuPanel* parentPanel = nullptr);
+        void HandleCloseRequest();
 
-        void Hide();
+        void CloseWindow();
 
-        // Called by child MenuPanel when it closes itself
-        void OnChildClosed(const EventTargets* targets)
+        void OnChildMouseMove()
         {
-            _openChildPanel = nullptr;
-            if (!targets->Contains(this))
+            // Stop cheduled child menu closing
+            _childShouldHide = false;
+
+            // Highlight item representing child menu
+            for (auto& it : _items)
             {
-                Hide();
-                if (_parentPanel)
-                    _parentPanel->OnChildClosed(targets);
+                if (_childItemId.has_value() && ((MenuItem*)it.item)->GetId() == _childItemId.value())
+                {
+                    if (_hoveredItem)
+                        _hoveredItem->SetBackgroundColor(D2D1::ColorF(0, 0.0f));
+                    _hoveredItem = (MenuItem*)it.item;
+                    _hoveredItem->SetBackgroundColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.1f));
+                    break;
+                }
             }
         }
 
-        // Iterates to the root menu and closes it, closing all child menus
+        // Sends a full close request to the root menu
         void FullClose()
         {
-            if (_parentPanel)
-                _parentPanel->FullClose();
-            else
-                Hide();
-        }
-
-        void AddOnDestruct(std::function<void()> handler, EventInfo info = { nullptr, "" })
-        {
-            _onDestructEvent.Add(handler, info);
-        }
-
-        void AddOnHide(std::function<void()> handler, EventInfo info = { nullptr, "" })
-        {
-            _onHideEvent.Add(handler, info);
-        }
-
-        void RemoveOnDestruct(EventInfo info)
-        {
-            _onDestructEvent.Remove(info);
-        }
-
-        void RemoveOnHide(EventInfo info)
-        {
-            _onHideEvent.Remove(info);
+            _fullCloseRequestEventEmitter->InvokeAll();
         }
 
     private:
-        void _AddHandlerToCanvas();
+        std::future<std::optional<zwnd::WindowId>> _OpenChildMenu(MenuItem::Id id);
 
-        void _RemoveHandlerFromCanvas();
+        void _AddHandlerToCanvas();
 
         void _RearrangeMenuItems()
         {
@@ -325,55 +384,8 @@ namespace zcom
                 maxWidth = _maxWidth;
 
             SetBaseSize(maxWidth + MARGINS * 2, totalHeight + MARGINS);
-            _CalculatePlacement();
         }
 
-        void _CalculatePlacement()
-        {
-            constexpr int LEFT = 1;
-            constexpr int RIGHT = 2;
-            constexpr int UP = 1;
-            constexpr int DOWN = 2;
-
-            // Horizontal placement
-            int hPlacement;
-            if (_parentRect.right - 3 + GetWidth() < _bounds.right)
-                hPlacement = RIGHT;
-            else if (_parentRect.left + 3 - GetWidth() > _bounds.left)
-                hPlacement = LEFT;
-            else
-                if (_bounds.right - (_parentRect.right - 3) > (_parentRect.left + 3) - _bounds.left)
-                    hPlacement = RIGHT;
-                else
-                    hPlacement = LEFT;
-
-            // Vertical placement
-            int vPlacement;
-            if (_parentRect.top + GetHeight() < _bounds.bottom)
-                vPlacement = DOWN;
-            else if (_parentRect.bottom - GetHeight() > _bounds.top)
-                vPlacement = UP;
-            else
-                if (_bounds.bottom - _parentRect.top > _parentRect.bottom - _bounds.top)
-                    vPlacement = DOWN;
-                else
-                    vPlacement = UP;
-
-            // Final x position
-            int xPos;
-            if (hPlacement == RIGHT)
-                xPos = _parentRect.right - 3;
-            else
-                xPos = _parentRect.left + 3 - GetWidth();
-
-            // Final y position
-            int yPos;
-            if (vPlacement == DOWN)
-                yPos = _parentRect.top;
-            else
-                yPos = _parentRect.bottom - GetHeight();
-
-            SetOffsetPixels(xPos, yPos);
-        }
+        void _CalculatePlacement();
     };
 }

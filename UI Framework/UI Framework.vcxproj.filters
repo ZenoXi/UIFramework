@@ -87,6 +87,9 @@
     <ClCompile Include="Scenes\TestScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Scenes\ContextMenuScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h">
@@ -161,7 +164,7 @@
     <ClInclude Include="Scenes\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\Event.h">
+    <ClInclude Include="Helper\EventEmitter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Scenes\EntryScene.h">
@@ -225,6 +228,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Window\WindowType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper\EventSubscription.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Base\MenuTemplate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Scenes\ContextMenuScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper\MiscUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\WindowDisplayType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

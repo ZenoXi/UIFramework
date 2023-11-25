@@ -29,7 +29,7 @@ namespace zcom
         static const char* StaticName() { return "entry"; }
 
     private:
-        void _Init(const SceneOptionsBase* options);
+        void _Init(SceneOptionsBase* options);
         void _Uninit();
         void _Focus();
         void _Unfocus();

@@ -167,6 +167,10 @@
     <ClCompile Include="Helper\StringHelper.cpp" />
     <ClCompile Include="Helper\Time.cpp" />
     <ClCompile Include="Helper\ResourceManager.cpp" />
+    <ClCompile Include="Scenes\ContextMenuScene.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="Scenes\DefaultNonClientAreaScene.cpp" />
     <ClCompile Include="Scenes\EntryScene.cpp" />
     <ClCompile Include="Scenes\Scene.cpp" />
@@ -189,6 +193,7 @@
     <ClInclude Include="Components\Base\ComponentBase.h" />
     <ClInclude Include="Components\Base\DirectionalPanel.h" />
     <ClInclude Include="Components\Base\EmptyPanel.h" />
+    <ClInclude Include="Components\Base\MenuTemplate.h" />
     <ClInclude Include="Components\Base\Image.h" />
     <ClInclude Include="Components\Base\Label.h" />
     <ClInclude Include="Components\Base\MenuItem.h" />
@@ -200,11 +205,17 @@
     <ClInclude Include="Components\Custom\DitheredBackground.h" />
     <ClInclude Include="D2DEffects\TintEffect.h" />
     <ClInclude Include="Helper\decimal.h" />
-    <ClInclude Include="Helper\Event.h" />
+    <ClInclude Include="Helper\EventEmitter.h" />
+    <ClInclude Include="Helper\EventSubscription.h" />
     <ClInclude Include="Helper\Handle.h" />
+    <ClInclude Include="Helper\MiscUtils.h" />
     <ClInclude Include="Helper\StringHelper.h" />
     <ClInclude Include="Helper\Time.h" />
     <ClInclude Include="Helper\ResourceManager.h" />
+    <ClInclude Include="Scenes\ContextMenuScene.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
     <ClInclude Include="Scenes\DefaultNonClientAreaScene.h" />
     <ClInclude Include="Scenes\EntryScene.h" />
     <ClInclude Include="Scenes\Scene.h" />
@@ -218,6 +229,7 @@
     <ClInclude Include="Window\GdiInclude.h" />
     <ClInclude Include="Window\Window.h" />
     <ClInclude Include="Window\WindowBackend.h" />
+    <ClInclude Include="Window\WindowDisplayType.h" />
     <ClInclude Include="Window\WindowGraphics.h" />
     <ClInclude Include="Window\WindowId.h" />
     <ClInclude Include="Window\WindowMessage.h" />

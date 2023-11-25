@@ -2,6 +2,7 @@
 
 #include "Label.h"
 #include "Image.h"
+#include "MenuTemplate.h"
 #include "Helper/ResourceManager.h"
 
 namespace zcom
@@ -10,6 +11,21 @@ namespace zcom
 
     class MenuItem : public Component
     {
+    public:
+        struct Id
+        {
+            uint64_t value = 0;
+
+            bool operator==(const Id& other)
+            {
+                return value == other.value;
+            }
+            bool operator!=(const Id& other)
+            {
+                return value != other.value;
+            }
+        };
+
 #pragma region base_class
     protected:
         void _OnDraw(Graphics g)
@@ -88,7 +104,7 @@ namespace zcom
             }
 
             // Draw expand arrow
-            if (_menuPanel)
+            if (_menu)
             {
                 if (_menuExpandImage->Redraw())
                     _menuExpandImage->Draw(g);
@@ -121,8 +137,10 @@ namespace zcom
 #pragma endregion
 
     private:
+        Id _id;
+
         std::unique_ptr<Label> _label = nullptr;
-        MenuPanel* _menuPanel = nullptr;
+        std::optional<MenuTemplate::Menu> _menu = std::nullopt;
         std::unique_ptr<zcom::Image> _menuExpandImage = nullptr;
         std::function<void(bool)> _onClick;
         bool _closeOnClick = true;
@@ -143,7 +161,7 @@ namespace zcom
     protected:
         friend class Scene;
         friend class Component;
-        MenuItem(Scene* scene) : Component(scene) {}
+        MenuItem(Scene* scene) : Component(scene), _id(_GenerateId()) {}
         // Separator
         void Init()
         {
@@ -176,15 +194,21 @@ namespace zcom
             SetParentWidthPercent(1.0f);
         }
         // Deeper menu
-        void Init(MenuPanel* panel, std::wstring text)
+        void Init(MenuTemplate::Menu menu, std::wstring text)
         {
             Init(text);
 
-            _menuPanel = panel;
+            _menu = std::move(menu);
             _menuExpandImage = Create<zcom::Image>(ResourceManagerOld::GetImage("menu_arrow_right_7x7"));
             _menuExpandImage->SetSize(25, 25);
             _menuExpandImage->SetPlacement(ImagePlacement::CENTER);
             _menuExpandImage->SetTintColor(D2D1::ColorF(0.5f, 0.5f, 0.5f));
+        }
+
+        Id _GenerateId()
+        {
+            static uint64_t id{ 1 };
+            return Id{ id++ };
         }
     public:
         ~MenuItem()
@@ -196,9 +220,14 @@ namespace zcom
         MenuItem(const MenuItem&) = delete;
         MenuItem& operator=(const MenuItem&) = delete;
 
-        MenuPanel* GetMenuPanel() const
+        Id GetId() const
         {
-            return _menuPanel;
+            return _id;
+        }
+
+        const std::optional<MenuTemplate::Menu>& GetMenu() const
+        {
+            return _menu;
         }
 
         // For non-checkable items, 'checked' will always be true

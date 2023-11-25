@@ -32,11 +32,13 @@ void zcom::DefaultNonClientAreaScene::SetContentBitmap(ID2D1Bitmap* contentBitma
     _contentBitmap = contentBitmap;
 }
 
-void zcom::DefaultNonClientAreaScene::_Init(const SceneOptionsBase* options)
+void zcom::DefaultNonClientAreaScene::_Init(SceneOptionsBase* options)
 {
     DefaultNonClientAreaSceneOptions opt;
     if (options)
         opt = *reinterpret_cast<const DefaultNonClientAreaSceneOptions*>(options);
+
+    _windowActivationSubscription = _window->SubscribeToWindowMessages(nullptr);
 }
 
 void zcom::DefaultNonClientAreaScene::_Uninit()
@@ -58,6 +60,29 @@ void zcom::DefaultNonClientAreaScene::_Unfocus()
 void zcom::DefaultNonClientAreaScene::_Update()
 {
     _canvas->Update();
+
+    if (_windowActivationSubscription)
+    {
+        _windowActivationSubscription->HandlePendingEvents([=](zwnd::WindowMessage message) {
+            if (message.id == zwnd::WindowActivateMessage::ID())
+            {
+                zwnd::WindowActivateMessage msg{};
+                msg.Decode(message);
+                if (msg.activationType == zwnd::WindowActivateMessage::ACTIVATED || msg.activationType == zwnd::WindowActivateMessage::CLICK_ACTIVATED)
+                {
+                    _borderColor = D2D1::ColorF(0.3f, 0.3f, 0.3f, 0.6f);
+                    _shadowColor = D2D1::Vector4F(0.0f, 0.0f, 0.0f, 0.4f);
+                    _redraw = true;
+                }
+                else
+                {
+                    _borderColor = D2D1::ColorF(0.3f, 0.3f, 0.3f, 0.3f);
+                    _shadowColor = D2D1::Vector4F(0.0f, 0.0f, 0.0f, 0.2f);
+                    _redraw = true;
+                }
+            }
+        });
+    }
 }
 
 bool zcom::DefaultNonClientAreaScene::_Redraw()
@@ -96,7 +121,7 @@ ID2D1Bitmap* zcom::DefaultNonClientAreaScene::_Draw(Graphics g)
     ID2D1Effect* shadowEffect = nullptr;
     g.target->CreateEffect(CLSID_D2D1Shadow, &shadowEffect);
     shadowEffect->SetInput(0, _clientAreaBitmap);
-    shadowEffect->SetValue(D2D1_SHADOW_PROP_COLOR, D2D1::Vector4F(0.0f, 0.0f, 0.0f, 0.4f));
+    shadowEffect->SetValue(D2D1_SHADOW_PROP_COLOR, _shadowColor);
     shadowEffect->SetValue(D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, 3.0f);
     g.target->DrawImage(shadowEffect, D2D1::Point2F(clientAreaMargins.left, clientAreaMargins.top));
     shadowEffect->Release();
@@ -114,7 +139,7 @@ ID2D1Bitmap* zcom::DefaultNonClientAreaScene::_Draw(Graphics g)
 
     // Draw window border
     ID2D1SolidColorBrush* borderBrush;
-    g.target->CreateSolidColorBrush(D2D1::ColorF(0.3f, 0.3f, 0.3f, 0.5f), &borderBrush);
+    g.target->CreateSolidColorBrush(_borderColor, &borderBrush);
     D2D1_RECT_F borderRect = {
         clientAreaMargins.left - 0.5f,
         clientAreaMargins.top - 0.5f,

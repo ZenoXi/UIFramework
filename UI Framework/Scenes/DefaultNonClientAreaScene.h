@@ -2,6 +2,9 @@
 
 #include "Scene.h"
 
+#include "Helper/EventEmitter.h"
+#include "Window/WindowMessage.h"
+
 namespace zcom
 {
     struct DefaultNonClientAreaSceneOptions : public SceneOptionsBase
@@ -32,12 +35,18 @@ namespace zcom
         ID2D1Bitmap* _titleBarBitmap = nullptr;
         ID2D1Bitmap* _contentBitmap = nullptr;
 
+        //D2D1_COLOR_F _borderColor = D2D1::ColorF(0.3f, 0.3f, 0.3f, 0.5f);
+        //D2D1_VECTOR_4F _shadowColor = D2D1::Vector4F(0.0f, 0.0f, 0.0f, 0.4f);
+        D2D1_COLOR_F _borderColor = D2D1::ColorF(0.3f, 0.3f, 0.3f, 0.5f);
+        D2D1_VECTOR_4F _shadowColor = D2D1::Vector4F(0.0f, 0.0f, 0.0f, 0.4f);
+        std::unique_ptr<AsyncEventSubscription<bool, zwnd::WindowMessage>> _windowActivationSubscription;
+
         // Common canvas to which the client area, additional scene elements and window effects are drawn
         ID2D1Bitmap1* _ccanvas = nullptr;
         bool _redraw = false;
 
     private:
-        void _Init(const SceneOptionsBase* options);
+        void _Init(SceneOptionsBase* options);
         void _Uninit();
         void _Focus();
         void _Unfocus();

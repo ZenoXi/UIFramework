@@ -90,7 +90,10 @@ int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
     //);
 
     std::optional<zwnd::WindowId> id2 = app.CreateTopWindow(
-        zwnd::WindowProperties().WindowClassName(L"wndClass2").InitialSize(720, 720).MainWindow(),
+        zwnd::WindowProperties()
+            .WindowClassName(L"wndClass2")
+            .InitialSize(720, 720)
+            .MainWindow(),
         [](zwnd::Window* wnd)
         {
             wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
@@ -102,19 +105,19 @@ int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
         }
     );
 
-    std::optional<zwnd::WindowId> id3 = app.CreateToolWindow(
-        id2.value(),
-        zwnd::WindowProperties().WindowClassName(L"wndClass3").InitialSize(500, 500),
-        [](zwnd::Window* wnd)
-        {
-            wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
-            wnd->resourceManager.InitAllImages();
-            wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
-            wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
-            wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
-            //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
-        }
-    );
+    //std::optional<zwnd::WindowId> id3 = app.CreateToolWindow(
+    //    id2.value(),
+    //    zwnd::WindowProperties().WindowClassName(L"wndClass3").InitialSize(500, 500),
+    //    [](zwnd::Window* wnd)
+    //    {
+    //        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
+    //        wnd->resourceManager.InitAllImages();
+    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+    //        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
+    //        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
+    //        //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
+    //    }
+    //);
 
     //std::optional<zwnd::WindowId> id4 = app.CreateChildWindow(
     //    id2.value(),

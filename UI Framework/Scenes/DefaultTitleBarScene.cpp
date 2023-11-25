@@ -8,7 +8,7 @@ zcom::DefaultTitleBarScene::DefaultTitleBarScene(App* app, zwnd::Window* window)
     : Scene(app, window)
 {}
 
-void zcom::DefaultTitleBarScene::_Init(const SceneOptionsBase* options)
+void zcom::DefaultTitleBarScene::_Init(SceneOptionsBase* options)
 {
     DefaultTitleBarSceneOptions opt;
     if (options)
@@ -28,6 +28,7 @@ void zcom::DefaultTitleBarScene::_Init(const SceneOptionsBase* options)
     AddMenuButton(L"Edit");
     AddMenuButton(L"View");
     // After the 'Add*Item*()' calls, the default item appearance and behavior can be modified through their variables
+    SubscribeToWindowStateChanges();
 }
 
 
@@ -48,13 +49,13 @@ void zcom::DefaultTitleBarScene::AddCloseButton()
     _closeButton->SetButtonColor(D2D1::ColorF(0, 0.0f));
     _closeButton->SetButtonHoverColor(D2D1::ColorF(0xE81123));
     _closeButton->SetButtonClickColor(D2D1::ColorF(0xE81123, 0.54f));
-    _closeButton->ButtonImage()->SetTintColor(D2D1::ColorF(0));
+    _closeButton->ButtonImage()->SetTintColor(_activeItemTint);
     _closeButton->ButtonHoverImage()->SetTintColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
     _closeButton->ButtonClickImage()->SetTintColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
     _closeButton->SetActivation(ButtonActivation::RELEASE);
-    _closeButton->SetOnActivated([&]() {
+    _closeButton->SubscribeOnActivated([&]() {
         _window->Close();
-    });
+    }).Detach();
 
     _canvas->AddComponent(_closeButton.get());
 }
@@ -69,18 +70,18 @@ void zcom::DefaultTitleBarScene::AddMaximizeButton()
     _maximizeButton->SetButtonImageAll(_window->resourceManager.GetImage("window_maximize"));
     _maximizeButton->ButtonImage()->SetPlacement(ImagePlacement::CENTER);
     _maximizeButton->ButtonImage()->SetPixelSnap(true);
-    _maximizeButton->ButtonImage()->SetTintColor(D2D1::ColorF(0));
+    _maximizeButton->ButtonImage()->SetTintColor(_activeItemTint);
     _maximizeButton->UseImageParamsForAll(_maximizeButton->ButtonImage());
     _maximizeButton->SetButtonColor(D2D1::ColorF(0, 0.0f));
     _maximizeButton->SetButtonHoverColor(D2D1::ColorF(0, 0.1f));
     _maximizeButton->SetButtonClickColor(D2D1::ColorF(0, 0.2f));
     _maximizeButton->SetActivation(ButtonActivation::RELEASE);
-    _maximizeButton->SetOnActivated([&]() {
+    _maximizeButton->SubscribeOnActivated([&]() {
         if (_window->Backend().Maximized())
             _window->Backend().Restore();
         else
             _window->Backend().Maximize();
-    });
+    }).Detach();
 
     _canvas->AddComponent(_maximizeButton.get());
 }
@@ -97,15 +98,15 @@ void zcom::DefaultTitleBarScene::AddMinimizeButton()
     _minimizeButton->SetButtonImageAll(_window->resourceManager.GetImage("window_minimize"));
     _minimizeButton->ButtonImage()->SetPlacement(ImagePlacement::CENTER);
     _minimizeButton->ButtonImage()->SetPixelSnap(true);
-    _minimizeButton->ButtonImage()->SetTintColor(D2D1::ColorF(0));
+    _minimizeButton->ButtonImage()->SetTintColor(_activeItemTint);
     _minimizeButton->UseImageParamsForAll(_minimizeButton->ButtonImage());
     _minimizeButton->SetButtonColor(D2D1::ColorF(0, 0.0f));
     _minimizeButton->SetButtonHoverColor(D2D1::ColorF(0, 0.1f));
     _minimizeButton->SetButtonClickColor(D2D1::ColorF(0, 0.2f));
     _minimizeButton->SetActivation(ButtonActivation::RELEASE);
-    _minimizeButton->SetOnActivated([&]() {
+    _minimizeButton->SubscribeOnActivated([&]() {
         _window->Backend().Minimize();
-    });
+    }).Detach();
 
     _canvas->AddComponent(_minimizeButton.get());
 }
@@ -126,7 +127,7 @@ void zcom::DefaultTitleBarScene::AddTitle(std::wstring title)
     _titleLabel = Create<Label>(title);
     _titleLabel->SetFont(L"Segoe UI");
     _titleLabel->SetFontSize(12.0f);
-    _titleLabel->SetFontColor(D2D1::ColorF(0));
+    _titleLabel->SetFontColor(_activeItemTint);
     _titleLabel->SetBaseSize(_titleLabel->GetTextWidth() + 1, 29);
     if (_iconImage)
         _titleLabel->SetHorizontalOffsetPixels(29 + 5);
@@ -223,6 +224,45 @@ std::vector<RECT> zcom::DefaultTitleBarScene::ExcludedCaptionRects()
     return excludedRects;
 }
 
+void zcom::DefaultTitleBarScene::SubscribeToWindowStateChanges()
+{
+    _windowActivationSubscription = _window->SubscribeToWindowMessages(nullptr);
+}
+
+void zcom::DefaultTitleBarScene::HandleWindowStateChanges()
+{
+    if (_windowActivationSubscription)
+    {
+        _windowActivationSubscription->HandlePendingEvents([=](zwnd::WindowMessage message) {
+            if (message.id == zwnd::WindowActivateMessage::ID())
+            {
+                zwnd::WindowActivateMessage msg{};
+                msg.Decode(message);
+                D2D1_COLOR_F newColor{};
+                if (msg.activationType == zwnd::WindowActivateMessage::ACTIVATED || msg.activationType == zwnd::WindowActivateMessage::CLICK_ACTIVATED)
+                {
+                    newColor = _activeItemTint;
+                    _canvas->InvokeRedraw();
+                }
+                else
+                {
+                    newColor = _inactiveItemTint;
+                    _canvas->InvokeRedraw();
+                }
+
+                if (_closeButton)
+                    _closeButton->ButtonImage()->SetTintColor(newColor);
+                if (_maximizeButton)
+                    _maximizeButton->ButtonImage()->SetTintColor(newColor);
+                if (_minimizeButton)
+                    _minimizeButton->ButtonImage()->SetTintColor(newColor);
+                if (_titleLabel)
+                    _titleLabel->SetFontColor(newColor);
+            }
+            });
+    }
+}
+
 void zcom::DefaultTitleBarScene::_Uninit()
 {
     _canvas->ClearComponents();
@@ -241,6 +281,7 @@ void zcom::DefaultTitleBarScene::_Unfocus()
 void zcom::DefaultTitleBarScene::_Update()
 {
     _canvas->Update();
+    HandleWindowStateChanges();
 }
 
 void zcom::DefaultTitleBarScene::_Resize(int width, int height, ResizeInfo info)

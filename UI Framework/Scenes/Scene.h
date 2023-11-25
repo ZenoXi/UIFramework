@@ -31,7 +31,7 @@ namespace zcom
         bool windowFullscreened = false;
     };
 
-    // Options for switching scenes
+    // Options scene initialization
     struct SceneOptionsBase
     {
 
@@ -52,7 +52,7 @@ namespace zcom
     public:
         virtual ~Scene();
     protected:
-        void Init(const SceneOptionsBase* options);
+        void Init(SceneOptionsBase* options);
         void Uninit();
         void Focus();
         void Unfocus();
@@ -90,7 +90,7 @@ namespace zcom
         Canvas* GetCanvas() const;
 
     private:
-        virtual void _Init(const SceneOptionsBase* options) = 0;
+        virtual void _Init(SceneOptionsBase* options) = 0;
         virtual void _Uninit() = 0;
         virtual void _Focus() = 0;
         virtual void _Unfocus() = 0;
