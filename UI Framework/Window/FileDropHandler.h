@@ -84,7 +84,7 @@ public:
                     {
                         UINT strLen = DragQueryFile((HDROP)stg.hGlobal, i, NULL, NULL);
                         std::wstring path;
-                        path.resize(strLen + 1);
+                        path.resize((size_t)strLen + 1);
                         if (DragQueryFile((HDROP)stg.hGlobal, i, path.data(), strLen + 1) != 0)
                         {
                             if (path.back() == L'\0')
