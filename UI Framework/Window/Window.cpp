@@ -10,7 +10,11 @@ zwnd::Window::Window(
     std::function<void(Window* window)> initFunction,
     std::function<void(Window* window)> onClosed
 )
-    : _id(WindowId::Generate()), _type(type), _parentId(parentWindowId), _onClosed(onClosed)
+    : _id(WindowId::Generate()),
+    _type(type),
+    _parentId(parentWindowId),
+    _onClosed(onClosed),
+    _windowMessageEvent(EventEmitterThreadMode::MULTITHREADED)
 {
     _app = app;
     _props = props;
@@ -26,6 +30,9 @@ zwnd::Window::Window(
     initFunction(this);
 
     _scenesInited.store(true);
+
+    // Start UI thread
+    _uiThread = std::thread(&Window::_UIThread, this);
 }
 
 zwnd::Window::~Window()
@@ -95,7 +102,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
 {
     if (msg.id == WindowSizeMessage::ID())
     {
-        WindowSizeMessage message;
+        WindowSizeMessage message{};
         message.Decode(msg);
         _windowSizeMessage = message;
     }
@@ -109,7 +116,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseMoveMessage::ID())
     {
-        MouseMoveMessage message;
+        MouseMoveMessage message{};
         message.Decode(msg);
         int x = message.x;
         int y = message.y;
@@ -130,7 +137,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseLeftPressedMessage::ID())
     {
-        MouseLeftPressedMessage message;
+        MouseLeftPressedMessage message{};
         message.Decode(msg);
         int x = message.x;
         int y = message.y;
@@ -139,7 +146,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseRightPressedMessage::ID())
     {
-        MouseRightPressedMessage message;
+        MouseRightPressedMessage message{};
         message.Decode(msg);
         int x = message.x;
         int y = message.y;
@@ -148,7 +155,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseLeftReleasedMessage::ID())
     {
-        MouseLeftReleasedMessage message;
+        MouseLeftReleasedMessage message{};
         message.Decode(msg);
         int x = message.x;
         int y = message.y;
@@ -157,7 +164,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseRightReleasedMessage::ID())
     {
-        MouseRightReleasedMessage message;
+        MouseRightReleasedMessage message{};
         message.Decode(msg);
         int x = message.x;
         int y = message.y;
@@ -166,7 +173,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseWheelUpMessage::ID())
     {
-        MouseWheelUpMessage message;
+        MouseWheelUpMessage message{};
         message.Decode(msg);
         int x = message.x;
         int y = message.y;
@@ -175,7 +182,7 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == MouseWheelDownMessage::ID())
     {
-        MouseWheelDownMessage message;
+        MouseWheelDownMessage message{};
         message.Decode(msg);
         int x = message.x;
         int y = message.y;
@@ -184,22 +191,24 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
     }
     else if (msg.id == KeyDownMessage::ID())
     {
-        KeyDownMessage message;
+        KeyDownMessage message{};
         message.Decode(msg);
         keyboardManager.OnKeyDown(message.keyCode);
     }
     else if (msg.id == KeyUpMessage::ID())
     {
-        KeyUpMessage message;
+        KeyUpMessage message{};
         message.Decode(msg);
         keyboardManager.OnKeyUp(message.keyCode);
     }
     else if (msg.id == CharMessage::ID())
     {
-        CharMessage message;
+        CharMessage message{};
         message.Decode(msg);
         keyboardManager.OnChar(message.character);
     }
+
+    _windowMessageEvent->InvokeAll(msg);
 }
 
 void zwnd::Window::_MessageThread()
@@ -234,9 +243,6 @@ void zwnd::Window::_MessageThread()
     // Add handlers
     _window->AddKeyboardHandler(&keyboardManager);
 
-    // Start UI thread
-    _uiThread = std::thread(&Window::_UIThread, this);
-
     // Main window loop
     Clock msgTimer = Clock(0);
     while (true)
@@ -267,7 +273,6 @@ void zwnd::Window::_MessageThread()
         {
             msgTimer.Reset();
         }
-        continue;
     }
     _uiThread.join();
 
@@ -342,10 +347,10 @@ void zwnd::Window::_UIThread()
             // Resize regular scenes
             for (auto& scene : _activeScenes)
             {
-                if (!_fullscreen && _TitleBarAvailable())
+                if (!_fullscreen)
                     scene->Resize(
                         newWidth - clientAreaMargins.left - clientAreaMargins.right,
-                        newHeight - clientAreaMargins.top - clientAreaMargins.bottom - _titleBarScene->TitleBarSceneHeight(),
+                        newHeight - clientAreaMargins.top - clientAreaMargins.bottom - (_TitleBarAvailable() ? _titleBarScene->TitleBarSceneHeight() : 0),
                         resizeInfo
                     );
                 else
@@ -621,10 +626,10 @@ std::unique_ptr<zcom::Panel> zwnd::Window::_BuildMasterPanel()
     for (auto& scene : _activeScenes)
     {
         zcom::Panel* panel = scene->GetCanvas()->BasePanel();
-        if (!_fullscreen && _TitleBarAvailable())
+        if (!_fullscreen)
         {
             panel->SetX(margins.left);
-            panel->SetY(margins.top + _titleBarScene->TitleBarSceneHeight());
+            panel->SetY(margins.top + (_TitleBarAvailable() ? _titleBarScene->TitleBarSceneHeight() : 0));
         }
         else
         {

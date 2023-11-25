@@ -141,6 +141,13 @@ namespace zwnd
         KeyboardManager keyboardManager;
         ResourceManager resourceManager;
 
+    public: // Window messages
+        std::unique_ptr<AsyncEventSubscription<bool, WindowMessage>> SubscribeToWindowMessages(const std::function<bool(WindowMessage)>& handler)
+        {
+            std::lock_guard<std::mutex> lock(_m_windowMessageEvent);
+            return _windowMessageEvent->SubscribeAsync(handler);
+        }
+
     private: // Scene control
         // Uninits a scene and removes it from the active scene list
         void _UninitScene(std::string name);
@@ -172,6 +179,8 @@ namespace zwnd
 
     private: // Window message handling
         void _HandleMessage(WindowMessage msg);
+        std::mutex _m_windowMessageEvent;
+        EventEmitter<bool, WindowMessage> _windowMessageEvent;
 
     private: // Window
         WindowId _id;
