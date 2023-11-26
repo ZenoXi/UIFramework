@@ -278,7 +278,7 @@ namespace zcom
                 // Draw scroll background
                 if (_verticalScrollbar.backgroundVisible)
                 {
-                    D2D1_RECT_F backgroundRect;
+                    D2D1_RECT_F backgroundRect{};
                     backgroundRect.left = (float)GetWidth() - ScrollbarWidth(Scrollbar::VERTICAL);
                     backgroundRect.right = (float)GetWidth();
                     backgroundRect.top = 0.0f;
@@ -307,7 +307,7 @@ namespace zcom
                 }
                 ID2D1SolidColorBrush* brush = nullptr;
                 g.target->CreateSolidColorBrush(color, &brush);
-                D2D1_ROUNDED_RECT scrollbarRect;
+                D2D1_ROUNDED_RECT scrollbarRect{};
                 scrollbarRect.radiusX = 2.0f;
                 scrollbarRect.radiusY = 2.0f;
                 scrollbarRect.rect = hitbox;
@@ -326,7 +326,7 @@ namespace zcom
                 // Draw scroll background
                 if (_horizontalScrollbar.backgroundVisible)
                 {
-                    D2D1_RECT_F backgroundRect;
+                    D2D1_RECT_F backgroundRect{};
                     backgroundRect.left = 0.0f;
                     backgroundRect.right = (float)GetWidth();
                     backgroundRect.top = (float)GetHeight() - ScrollbarWidth(Scrollbar::HORIZONTAL);
@@ -355,7 +355,7 @@ namespace zcom
                 }
                 ID2D1SolidColorBrush* brush = nullptr;
                 g.target->CreateSolidColorBrush(color, &brush);
-                D2D1_ROUNDED_RECT scrollbarRect;
+                D2D1_ROUNDED_RECT scrollbarRect{};
                 scrollbarRect.radiusX = 2.0f;
                 scrollbarRect.radiusY = 2.0f;
                 scrollbarRect.rect = hitbox;
@@ -373,9 +373,9 @@ namespace zcom
             _RecalculateLayout(width, height);
         }
 
-        void _OnScreenPosChange(int x, int y)
+        void _OnWindowPosChange(int x, int y)
         {
-            _SetScreenPositions();
+            _SetWindowPositions();
         }
 
         EventTargets _OnMouseMove(int deltaX, int deltaY)
@@ -1035,18 +1035,18 @@ namespace zcom
             if (_horizontalScrollbar.scrollAmount > MaxScroll(Scrollbar::HORIZONTAL))
                 _horizontalScrollbar.scrollAmount = MaxScroll(Scrollbar::HORIZONTAL);
 
-            _SetScreenPositions();
+            _SetWindowPositions();
             InvokeRedraw();
         }
 
-        void _SetScreenPositions()
+        void _SetWindowPositions()
         {
             for (auto& _item : _items)
             {
                 Component* item = _item.item;
-                item->SetScreenPosition(
-                    GetScreenX() + item->GetX() - _horizontalScrollbar.scrollAmount,
-                    GetScreenY() + item->GetY() - _verticalScrollbar.scrollAmount
+                item->SetWindowPosition(
+                    GetWindowX() + item->GetX() - _horizontalScrollbar.scrollAmount,
+                    GetWindowY() + item->GetY() - _verticalScrollbar.scrollAmount
                 );
             }
         }
@@ -1428,7 +1428,7 @@ namespace zcom
                     _verticalScrollbar.scrollAmount = maxScroll;
                 else if (_verticalScrollbar.scrollAmount < 0)
                     _verticalScrollbar.scrollAmount = 0;
-                _SetScreenPositions();
+                _SetWindowPositions();
                 InvokeRedraw();
             }
             else
@@ -1442,7 +1442,7 @@ namespace zcom
                     _horizontalScrollbar.scrollAmount = maxScroll;
                 else if (_horizontalScrollbar.scrollAmount < 0)
                     _horizontalScrollbar.scrollAmount = 0;
-                _SetScreenPositions();
+                _SetWindowPositions();
                 InvokeRedraw();
             }
         }
@@ -1547,7 +1547,7 @@ namespace zcom
                 if (MaxScroll(Scrollbar::VERTICAL) != 0)
                     scrollBarPosition = (scrollBarMaxLength - scrollBarLength) * (_verticalScrollbar.scrollAmount / (float)MaxScroll(Scrollbar::VERTICAL));
 
-                D2D1_RECT_F hitbox;
+                D2D1_RECT_F hitbox{};
                 hitbox.left = GetWidth() - hitboxWidth;
                 hitbox.right = GetWidth();
                 hitbox.top = startPos + scrollBarPosition;
@@ -1571,7 +1571,7 @@ namespace zcom
                 if (MaxScroll(Scrollbar::HORIZONTAL) != 0)
                     scrollBarPosition = (scrollBarMaxLength - scrollBarLength) * (_horizontalScrollbar.scrollAmount / (float)MaxScroll(Scrollbar::HORIZONTAL));
 
-                D2D1_RECT_F hitbox;
+                D2D1_RECT_F hitbox{};
                 hitbox.left = startPos + scrollBarPosition;
                 hitbox.right = hitbox.left + scrollBarLength;
                 hitbox.top = GetHeight() - hitboxWidth;

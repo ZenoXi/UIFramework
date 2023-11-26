@@ -28,5 +28,5 @@ void zcom::Component::_ShowHoverText()
     if (_hoverText.empty())
         return;
 
-    //_scene->GetApp()->Overlay()->ShowHoverText(_hoverText, GetScreenX() + GetMousePosX(), GetScreenY() + GetMousePosY());
+    //_scene->GetApp()->Overlay()->ShowHoverText(_hoverText, GetWindowX() + GetMousePosX(), GetWindowY() + GetMousePosY());
 }

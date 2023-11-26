@@ -10,6 +10,7 @@
 #include "Scenes/Scene.h"
 #include "Scenes/DefaultTitleBarScene.h"
 #include "Scenes/DefaultNonClientAreaScene.h"
+#include "Components/Base/MenuTemplate.h"
 
 #include <thread>
 #include <atomic>
@@ -136,6 +137,9 @@ namespace zwnd
         void SetBlockingWindow(zwnd::WindowId windowId);
         void ResetBlockingWindow();
         void NotifyBlockingWindow();
+
+    public: // Other
+        void OpenContextMenu(zcom::MenuTemplate::Menu menuTemplate, RECT sourceItemRect);
 
     public: // Managers
         KeyboardManager keyboardManager;

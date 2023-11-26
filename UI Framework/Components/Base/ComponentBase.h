@@ -172,8 +172,8 @@ namespace zcom
         // Main
         int _x = 0;
         int _y = 0;
-        int _screenX = 0;
-        int _screenY = 0;
+        int _windowX = 0;
+        int _windowY = 0;
         int _width = 100;
         int _height = 100;
         float _opacity = 1.0f;
@@ -391,8 +391,8 @@ namespace zcom
         // Common
         int GetX() const { return _x; }
         int GetY() const { return _y; }
-        int GetScreenX() const { return _screenX; }
-        int GetScreenY() const { return _screenY; }
+        int GetWindowX() const { return _windowX; }
+        int GetWindowY() const { return _windowY; }
         int GetWidth() const { return _width; }
         int GetHeight() const { return _height; }
         float GetOpacity() const { return _opacity; }
@@ -412,19 +412,19 @@ namespace zcom
             _x = x;
             _y = y;
         }
-        void SetScreenX(int x)
+        void SetWindowX(int x)
         {
-            SetScreenPosition(x, _screenY);
+            SetWindowPosition(x, _windowY);
         }
-        void SetScreenY(int y)
+        void SetWindowY(int y)
         {
-            SetScreenPosition(_screenX, y);
+            SetWindowPosition(_windowX, y);
         }
-        void SetScreenPosition(int x, int y)
+        void SetWindowPosition(int x, int y)
         {
-            _screenX = x;
-            _screenY = y;
-            _OnScreenPosChange(_screenX, _screenY);
+            _windowX = x;
+            _windowY = y;
+            _OnWindowPosChange(_windowX, _windowY);
         }
         void SetWidth(int width)
         {
@@ -663,7 +663,7 @@ namespace zcom
             }
             else
             {
-                _Prop prop;
+                _Prop prop{};
                 prop.valid = false;
                 return prop;
             }
@@ -1094,7 +1094,7 @@ namespace zcom
                         float offset = _borderWidth * 0.5f;
                         if (rounding > 0.0f)
                         {
-                            D2D1_ROUNDED_RECT roundedrect;
+                            D2D1_ROUNDED_RECT roundedrect{};
                             roundedrect.radiusX = _cornerRounding - offset;
                             roundedrect.radiusY = _cornerRounding - offset;
                             roundedrect.rect = D2D1::RectF(offset, offset, _width - offset, _height - offset);
@@ -1116,7 +1116,7 @@ namespace zcom
                         float offset = _borderWidth * 0.5f;
                         if (rounding > 0.0f)
                         {
-                            D2D1_ROUNDED_RECT roundedrect;
+                            D2D1_ROUNDED_RECT roundedrect{};
                             roundedrect.radiusX = _cornerRounding - offset;
                             roundedrect.radiusY = _cornerRounding - offset;
                             roundedrect.rect = D2D1::RectF(offset, offset, _width - offset, _height - offset);
@@ -1147,7 +1147,7 @@ namespace zcom
                     g.target->SetTarget(opacityMask);
                     g.target->Clear();
 
-                    D2D1_ROUNDED_RECT roundedrect;
+                    D2D1_ROUNDED_RECT roundedrect{};
                     roundedrect.radiusX = _cornerRounding;
                     roundedrect.radiusY = _cornerRounding;
                     roundedrect.rect.left = 0;
@@ -1274,7 +1274,7 @@ namespace zcom
         virtual bool _Redraw() { return false; }
         virtual void _OnDraw(Graphics g) {}
         virtual void _OnResize(int width, int height) {}
-        virtual void _OnScreenPosChange(int x, int y) {}
+        virtual void _OnWindowPosChange(int x, int y) {}
 
     public:
         virtual const char* GetName() const { return "base"; }

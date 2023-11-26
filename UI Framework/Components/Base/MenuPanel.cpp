@@ -137,12 +137,11 @@ std::future<std::optional<zwnd::WindowId>> zcom::MenuPanel::_OpenChildMenu(MenuI
     MenuTemplate::Menu menu = item->GetMenu().value();
 
     zwnd::Window* window = _scene->GetWindow();
-    RECT clientAreaMargins = window->GetNonClientAreaScene()->GetClientAreaMargins();
     RECT itemRectInScreenCoords = {
-        item->GetScreenX() + clientAreaMargins.left,
-        item->GetScreenY() + clientAreaMargins.top,
-        item->GetScreenX() + clientAreaMargins.left + item->GetWidth(),
-        item->GetScreenY() + clientAreaMargins.top + item->GetHeight()
+        item->GetWindowX(),
+        item->GetWindowY(),
+        item->GetWindowX() + item->GetWidth(),
+        item->GetWindowY() + item->GetHeight()
     };
     RECT windowRect = window->Backend().GetWindowRectangle();
     itemRectInScreenCoords.left += windowRect.left;

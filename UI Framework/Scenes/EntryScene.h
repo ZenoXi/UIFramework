@@ -21,6 +21,7 @@ namespace zcom
         std::unique_ptr<Label> _helloWorldLabel = nullptr;
         std::unique_ptr<EmptyPanel> _testPanel = nullptr;
         std::unique_ptr<Button> _button = nullptr;
+        std::unique_ptr<Button> _button2 = nullptr;
 
     public:
         EntryScene(App* app, zwnd::Window* window);

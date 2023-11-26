@@ -1,6 +1,8 @@
 #include "App.h"
 #include "Window.h"
 
+#include "Scenes/ContextMenuScene.h"
+
 zwnd::Window::Window(
     App* app,
     WindowType type,
@@ -50,6 +52,41 @@ void zwnd::Window::Fullscreen(bool fullscreen)
     _fullscreenTargetValue = fullscreen;
     _fullscreenChanged = true;
     _window->SetFullscreen(_fullscreenTargetValue);
+}
+
+void zwnd::Window::OpenContextMenu(zcom::MenuTemplate::Menu menuTemplate, RECT sourceItemRect)
+{
+    auto titleBarScene = GetTitleBarScene();
+    int titleBarHeight = 0;
+    if (titleBarScene)
+        titleBarHeight = titleBarScene->TitleBarSceneHeight();
+    RECT clientAreaMargins = GetNonClientAreaScene()->GetClientAreaMargins();
+    RECT windowRect = _window->GetWindowRectangle();
+    sourceItemRect.left += windowRect.left;
+    sourceItemRect.top += windowRect.top;
+    sourceItemRect.right += windowRect.left;
+    sourceItemRect.bottom += windowRect.top;
+
+    std::optional<zwnd::WindowId> menuId = _app->CreateToolWindow(
+        _id,
+        zwnd::WindowProperties()
+            .WindowClassName(L"wndClassMenu")
+            .InitialSize(100, 100)
+            .InitialDisplay(zwnd::WindowDisplayType::HIDDEN)
+            .DisableWindowAnimations()
+            .DisableWindowActivation(),
+        [sourceItemRect, menuTemplate](zwnd::Window* wnd)
+        {
+            wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
+            wnd->resourceManager.InitAllImages();
+            wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+
+            zcom::ContextMenuSceneOptions opt;
+            opt.params.parentRect = sourceItemRect;
+            opt.params.menuTemplate = menuTemplate;
+            wnd->LoadStartingScene<zcom::ContextMenuScene>(&opt);
+        }
+    );
 }
 
 void zwnd::Window::_UninitScene(std::string name)
@@ -327,6 +364,7 @@ void zwnd::Window::_UIThread()
             resizeInfo.windowMinimized = _windowSizeMessage->minimized;
             resizeInfo.windowRestored = _windowSizeMessage->restored;
             RECT clientAreaMargins = _nonClientAreaScene->GetClientAreaMargins();
+            int titleBarHeight = _TitleBarAvailable() ? _titleBarScene->TitleBarSceneHeight() : 0;
 
             // Handle fullscreen change
             if (_fullscreenChanged)
@@ -348,13 +386,19 @@ void zwnd::Window::_UIThread()
             for (auto& scene : _activeScenes)
             {
                 if (!_fullscreen)
+                {
                     scene->Resize(
                         newWidth - clientAreaMargins.left - clientAreaMargins.right,
-                        newHeight - clientAreaMargins.top - clientAreaMargins.bottom - (_TitleBarAvailable() ? _titleBarScene->TitleBarSceneHeight() : 0),
+                        newHeight - clientAreaMargins.top - clientAreaMargins.bottom - titleBarHeight,
                         resizeInfo
                     );
+                    scene->GetCanvas()->BasePanel()->SetWindowPosition(clientAreaMargins.left, clientAreaMargins.top + titleBarHeight);
+                }
                 else
+                {
                     scene->Resize(newWidth, newHeight, resizeInfo);
+                    scene->GetCanvas()->BasePanel()->SetWindowPosition(0, 0);
+                }
             }
             // Resize title bar scene
             if (_TitleBarAvailable())
@@ -364,6 +408,7 @@ void zwnd::Window::_UIThread()
                     _titleBarScene->TitleBarSceneHeight(),
                     resizeInfo
                 );
+                ((zcom::Scene*)_titleBarScene.get())->GetCanvas()->BasePanel()->SetWindowPosition(clientAreaMargins.left, clientAreaMargins.top);
             }
             // Resize non-client area scene
             ((zcom::Scene*)_nonClientAreaScene.get())->Resize(newWidth, newHeight, resizeInfo);
