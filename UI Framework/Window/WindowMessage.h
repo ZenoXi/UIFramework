@@ -555,6 +555,34 @@ namespace zwnd
         static const char* ID() { return "char"; }
     };
 
+    class MouseInputMessage
+    {
+    public:
+        int deltaX;
+        int deltaY;
+
+        WindowMessage Encode()
+        {
+            WindowMessage msg;
+            msg.id = ID();
+            *(int*)(msg.data + 0) = deltaX;
+            *(int*)(msg.data + 4) = deltaY;
+            return msg;
+        }
+
+        bool Decode(WindowMessage msg)
+        {
+            if (msg.id != ID())
+                return false;
+
+            deltaX = *(int*)(msg.data + 0);
+            deltaY = *(int*)(msg.data + 4);
+            return true;
+        }
+
+        static const char* ID() { return "input"; }
+    };
+
     class WindowActivateMessage
     {
     public:

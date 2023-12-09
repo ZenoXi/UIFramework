@@ -2,6 +2,7 @@
 #include "Window.h"
 
 #include "Scenes/ContextMenuScene.h"
+#include "Scenes/TooltipScene.h"
 
 zwnd::Window::Window(
     App* app,
@@ -35,6 +36,35 @@ zwnd::Window::Window(
 
     // Start UI thread
     _uiThread = std::thread(&Window::_UIThread, this);
+
+    // Asynchronously create tooltip window
+    if (!props.disableFastTooltips)
+    {
+        // TODO: Wrap into shared_ptr, until project updates to C++23 and std::move_only_function becomes available
+        auto subscriptionWrapper = std::make_shared<std::unique_ptr<AsyncEventSubscription<void, zcom::TooltipParams>>>(std::move(_tooltipEventEmitter->SubscribeAsync()));
+
+        _app->CreateToolWindowAsync(
+            _id,
+            zwnd::WindowProperties()
+                .WindowClassName(L"wndClassTooltip")
+                .InitialSize(10, 10)
+                .InitialDisplay(zwnd::WindowDisplayType::HIDDEN)
+                .DisableWindowAnimations()
+                .DisableWindowActivation()
+                .DisableMouseInteraction()
+                .DisableFastTooltips(),
+            [subscriptionWrapper](zwnd::Window* wnd) mutable
+            {
+                wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+
+                zcom::TooltipSceneOptions opt;
+                opt.showRequestSubscriptionWrapper = subscriptionWrapper;
+                //opt.showRequestSubscription = std::move(sub);
+                //opt.showRequestEmitter = _tooltipEventEmitter;
+                wnd->LoadStartingScene<zcom::TooltipScene>(&opt);
+            }
+        );
+    }
 }
 
 zwnd::Window::~Window()
@@ -56,11 +86,6 @@ void zwnd::Window::Fullscreen(bool fullscreen)
 
 void zwnd::Window::OpenContextMenu(zcom::MenuTemplate::Menu menuTemplate, RECT sourceItemRect)
 {
-    auto titleBarScene = GetTitleBarScene();
-    int titleBarHeight = 0;
-    if (titleBarScene)
-        titleBarHeight = titleBarScene->TitleBarSceneHeight();
-    RECT clientAreaMargins = GetNonClientAreaScene()->GetClientAreaMargins();
     RECT windowRect = _window->GetWindowRectangle();
     sourceItemRect.left += windowRect.left;
     sourceItemRect.top += windowRect.top;
@@ -71,7 +96,7 @@ void zwnd::Window::OpenContextMenu(zcom::MenuTemplate::Menu menuTemplate, RECT s
         _id,
         zwnd::WindowProperties()
             .WindowClassName(L"wndClassMenu")
-            .InitialSize(100, 100)
+            .InitialSize(10, 10)
             .InitialDisplay(zwnd::WindowDisplayType::HIDDEN)
             .DisableWindowAnimations()
             .DisableWindowActivation(),
@@ -87,6 +112,48 @@ void zwnd::Window::OpenContextMenu(zcom::MenuTemplate::Menu menuTemplate, RECT s
             wnd->LoadStartingScene<zcom::ContextMenuScene>(&opt);
         }
     );
+}
+
+void zwnd::Window::ShowTooltip(zcom::TooltipParams params)
+{
+    RECT windowRect = _window->GetWindowRectangle();
+    params.xPos += windowRect.left;
+    params.yPos += windowRect.top;
+    if (params.mouseMovementBounds)
+    {
+        params.mouseMovementBounds.value().left += windowRect.left;
+        params.mouseMovementBounds.value().right += windowRect.left;
+        params.mouseMovementBounds.value().top += windowRect.top;
+        params.mouseMovementBounds.value().bottom += windowRect.top;
+    }
+    _tooltipEventEmitter->InvokeAll(params);
+
+    //if (!_props.disableFastTooltips)
+    //{
+    //    RECT windowRect = _window->GetWindowRectangle();
+    //    x += windowRect.left;
+    //    y += windowRect.top;
+
+    //}
+
+    //std::optional<zwnd::WindowId> menuId = _app->CreateToolWindow(
+    //    _id,
+    //    zwnd::WindowProperties()
+    //        .WindowClassName(L"wndClassMenu")
+    //        .InitialSize(10, 10)
+    //        .InitialDisplay(zwnd::WindowDisplayType::HIDDEN)
+    //        .DisableWindowAnimations()
+    //        .DisableWindowActivation()
+    //        .DisableFastTooltips(),
+    //    [text, x, y, this](zwnd::Window* wnd)
+    //    {
+    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
+
+    //        zcom::TooltipSceneOptions opt;
+    //        //opt.showRequestSubscription = _tooltipEventEmitter->SubscribeAsync()
+    //        //wnd->LoadStartingScene<zcom::TooltipScene>(&opt);
+    //    }
+    //);
 }
 
 void zwnd::Window::_UninitScene(std::string name)

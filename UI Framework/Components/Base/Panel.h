@@ -699,7 +699,6 @@ namespace zcom
                     break;
                 }
             }
-            OnMouseMove(GetMousePosX(), GetMousePosY());
             if (targets.Empty())
                 targets.Add(this, x, y);
             return targets;
@@ -777,7 +776,6 @@ namespace zcom
                     break;
                 }
             }
-            OnMouseMove(GetMousePosX(), GetMousePosY());
             if (targets.Empty())
                 targets.Add(this, x, y);
             return targets;

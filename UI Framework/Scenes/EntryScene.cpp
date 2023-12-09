@@ -37,6 +37,7 @@ void zcom::EntryScene::_Init(SceneOptionsBase* options)
     _button = Create<Button>(L"Entry");
     _button->SetBaseSize(100, 40);
     _button->SetAlignment(Alignment::CENTER, Alignment::CENTER);
+    _button->SetHoverText(L"Thisss! is a tooltip\nAnd this is a new line to test height\nAnd this is a very long line to test the wrapping when the tooltip exceeds maximum width, which at the time of writing this is 600");
     _button->SubscribeOnActivated([&]() {
         MenuTemplate::Menu innerMenu2;
         MenuTemplate::MenuItem item2p1;

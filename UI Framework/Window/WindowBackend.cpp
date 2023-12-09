@@ -81,12 +81,10 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND
     
     // Create and show window
     _hwnd = CreateWindowEx(
-        WS_EX_LAYERED | (_activationDisabled ? WS_EX_NOACTIVATE : NULL),
-        //NULL,
+        WS_EX_LAYERED | (_activationDisabled ? WS_EX_NOACTIVATE : NULL) | (props.disableMouseInteraction ? WS_EX_TRANSPARENT : NULL),
         _wndClassName,
         nullptr,
         windowStyle,
-        //WS_POPUP,
         x, y, w, h,
         parentWindow,
         NULL,
@@ -442,9 +440,16 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
 
         if (raw->header.dwType == RIM_TYPEMOUSE)
         {
-            int x = raw->data.mouse.lLastX;
-            int y = raw->data.mouse.lLastY;
+            int deltaX = raw->data.mouse.lLastX;
+            int deltaY = raw->data.mouse.lLastY;
             //std::cout << x << ":" << y << '\n';
+
+            MouseInputMessage message;
+            message.deltaX = deltaX;
+            message.deltaY = deltaY;
+            _m_msg.lock();
+            _msgQueue.push(message.Encode());
+            _m_msg.unlock();
         }
         break;
     }

@@ -16,7 +16,7 @@ std::optional<zwnd::WindowId> App::CreateTopWindow(zwnd::WindowProperties props,
 {
     std::lock_guard<std::mutex> lock(_m_windows);
     _windows.push_back({
-        std::make_unique<zwnd::Window>(this, zwnd::WindowType::TOP, std::nullopt, props, _hinst, initFunction, [&](zwnd::Window* window) {
+        std::make_unique<zwnd::Window>(this, zwnd::WindowType::TOP, std::nullopt, props, _hinst, std::move(initFunction), [&](zwnd::Window* window) {
             std::lock_guard<std::mutex> lock(_m_windows);
             _TryDestruct(window->GetWindowId());
         })
@@ -45,7 +45,7 @@ std::optional<zwnd::WindowId> App::CreateChildWindow(zwnd::WindowId parentWindow
     }
 
     _windows.push_back({
-        std::make_unique<zwnd::Window>(this, zwnd::WindowType::CHILD, std::optional(parentWindowId), props, _hinst, initFunction, [&](zwnd::Window* window) {
+        std::make_unique<zwnd::Window>(this, zwnd::WindowType::CHILD, std::optional(parentWindowId), props, _hinst, std::move(initFunction), [&](zwnd::Window* window) {
             std::lock_guard<std::mutex> lock(_m_windows);
             _TryDestruct(window->GetWindowId());
             zwnd::Window* parentWindow = _FindWindow(parentWindowId);
@@ -70,7 +70,7 @@ std::optional<zwnd::WindowId> App::CreateToolWindow(zwnd::WindowId parentWindowI
         return std::nullopt;
 
     _windows.push_back({
-        std::make_unique<zwnd::Window>(this, zwnd::WindowType::TOOL, std::optional(parentWindowId), props, _hinst, initFunction, [&](zwnd::Window* window) {
+        std::make_unique<zwnd::Window>(this, zwnd::WindowType::TOOL, std::optional(parentWindowId), props, _hinst, std::move(initFunction), [&](zwnd::Window* window) {
             std::lock_guard<std::mutex> lock(_m_windows);
             _TryDestruct(window->GetWindowId());
         })
@@ -81,7 +81,7 @@ std::optional<zwnd::WindowId> App::CreateToolWindow(zwnd::WindowId parentWindowI
 std::future<std::optional<zwnd::WindowId>> App::CreateTopWindowAsync(zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction)
 {
     // TODO: properly clean up on app close instead of detaching the thread
-    std::packaged_task<std::optional<zwnd::WindowId>()> task([=] { return CreateTopWindow(props, initFunction); });
+    std::packaged_task<std::optional<zwnd::WindowId>()> task([=, initFunction = std::move(initFunction)]() mutable { return CreateTopWindow(props, std::move(initFunction)); });
     std::future<std::optional<zwnd::WindowId>> future = task.get_future();
     std::thread(std::move(task)).detach();
     return future;
@@ -89,7 +89,7 @@ std::future<std::optional<zwnd::WindowId>> App::CreateTopWindowAsync(zwnd::Windo
 
 std::future<std::optional<zwnd::WindowId>> App::CreateChildWindowAsync(zwnd::WindowId parentWindowId, zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction)
 {
-    std::packaged_task<std::optional<zwnd::WindowId>()> task([=] { return CreateChildWindow(parentWindowId, props, initFunction); });
+    std::packaged_task<std::optional<zwnd::WindowId>()> task([=, initFunction = std::move(initFunction)]() mutable { return CreateChildWindow(parentWindowId, props, std::move(initFunction)); });
     std::future<std::optional<zwnd::WindowId>> future = task.get_future();
     std::thread(std::move(task)).detach();
     return future;
@@ -97,7 +97,7 @@ std::future<std::optional<zwnd::WindowId>> App::CreateChildWindowAsync(zwnd::Win
 
 std::future<std::optional<zwnd::WindowId>> App::CreateToolWindowAsync(zwnd::WindowId parentWindowId, zwnd::WindowProperties props, std::function<void(zwnd::Window* window)> initFunction)
 {
-    std::packaged_task<std::optional<zwnd::WindowId>()> task([=] { return CreateToolWindow(parentWindowId, props, initFunction); });
+    std::packaged_task<std::optional<zwnd::WindowId>()> task([=, initFunction = std::move(initFunction)]() mutable { return CreateToolWindow(parentWindowId, props, std::move(initFunction)); });
     std::future<std::optional<zwnd::WindowId>> future = task.get_future();
     std::thread(std::move(task)).detach();
     return future;

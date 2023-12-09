@@ -26,6 +26,11 @@ namespace zwnd
         bool disableWindowAnimations = false;
         // Disable ability for window to become activated
         bool disableWindowActivation = false;
+        // Disable ability to interact with the window with a mouse
+        bool disableMouseInteraction = false;
+        // Creating a window by default creates a hidden window for tooltips, which doesn't need to be created every time a tooltip is shown, increasing speed
+        // This behavior can be disabled to reduce init time for windows which don't need this optimization
+        bool disableFastTooltips = false;
 
         //
         // Top level window properties
@@ -48,6 +53,8 @@ namespace zwnd
         WindowProperties& InitialDisplay(WindowDisplayType initialDisplay) { this->initialDisplay = initialDisplay; return *this; }
         WindowProperties& DisableWindowAnimations() { disableWindowAnimations = true; return *this; }
         WindowProperties& DisableWindowActivation() { disableWindowActivation = true; return *this; }
+        WindowProperties& DisableMouseInteraction() { disableMouseInteraction = true; return *this; }
+        WindowProperties& DisableFastTooltips() { disableFastTooltips = true; return *this; }
         WindowProperties& MainWindow() { mainWindow = true; return *this; }
         WindowProperties& BlockParent() { blockParent = true; return *this; }
     };

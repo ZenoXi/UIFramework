@@ -179,6 +179,7 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="Scenes\TooltipScene.cpp" />
     <ClCompile Include="UI Framework.cpp" />
     <ClCompile Include="Window\DisplayWindow.cpp" />
     <ClCompile Include="Window\Window.cpp" />
@@ -224,6 +225,8 @@
       <SubType>
       </SubType>
     </ClInclude>
+    <ClInclude Include="Scenes\TooltipParams.h" />
+    <ClInclude Include="Scenes\TooltipScene.h" />
     <ClInclude Include="Window\CursorIcon.h" />
     <ClInclude Include="Window\FileDropHandler.h" />
     <ClInclude Include="Window\GdiInclude.h" />

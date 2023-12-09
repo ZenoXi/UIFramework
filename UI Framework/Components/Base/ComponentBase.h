@@ -5,6 +5,7 @@
 #include <list>
 #include <string>
 #include <unordered_map>
+#include <atomic>
 
 #include "Window/DisplayWindow.h"
 #include "Window/Graphics.h"
@@ -140,6 +141,13 @@ namespace zcom
             _pendingActions.push_back(std::move(func));
         }
 
+        // A shorthand to check whether the given coordinates represent the special invalid position
+        // Invalid positions are used for invoking mouse events without a specific position
+        bool CoordinatesInvalid(int x, int y)
+        {
+            return x == std::numeric_limits<int>::min() && y == std::numeric_limits<int>::min();
+        }
+
         // Component creation
         template<class T, typename... Args>
         std::unique_ptr<T> Create(Args&&... args)
@@ -154,6 +162,13 @@ namespace zcom
 
         ID2D1Bitmap1* _canvas = nullptr;
         bool _redraw = true;
+
+        uint64_t _id = _GenerateId();
+        static uint64_t _GenerateId()
+        {
+            static std::atomic<uint64_t> _ID_COUNTER = 0;
+            return _ID_COUNTER.fetch_add(1);
+        }
 
         // Position description
         Alignment _hPosAlign = Alignment::START;
@@ -209,7 +224,7 @@ namespace zcom
 
         // Hover text
         std::wstring _hoverText = L"";
-        Duration _hoverTextDelay = Duration(500, MILLISECONDS);
+        Duration _hoverTextDelay = Duration(400, MILLISECONDS);
         TimePoint _hoverStart = ztime::Main();
         bool _hoverWaiting = false;
 
@@ -775,9 +790,8 @@ namespace zcom
                 return EventTargets();
 
             // Correct mouse position if it doesn't match release position
-            if (x != std::numeric_limits<int>::min() && y != std::numeric_limits<int>::min())
-                if (_mousePosX != x || _mousePosY != y)
-                    OnMouseMove(x, y);
+            if (!CoordinatesInvalid(x, y) && (_mousePosX != x || _mousePosY != y))
+                OnMouseMove(x, y);
 
             _mouseLeftClicked = false;
             _onLeftReleased->InvokeAll(this, x, y);
@@ -806,9 +820,8 @@ namespace zcom
                 return EventTargets();
 
             // Correct mouse position if it doesn't match release position
-            if (x != std::numeric_limits<int>::min() && y != std::numeric_limits<int>::min())
-                if (_mousePosX != x || _mousePosY != y)
-                    OnMouseMove(x, y);
+            if (!CoordinatesInvalid(x, y) && (_mousePosX != x || _mousePosY != y))
+                OnMouseMove(x, y);
 
             _mouseRightClicked = false;
             _onRightReleased->InvokeAll(this, x, y);
@@ -973,9 +986,15 @@ namespace zcom
         }
 
         // Layout events
-        auto SubscribeOnLayoutChanged(std::function<void()> handler)
+
+        EventSubscription<void> SubscribeOnLayoutChanged(std::function<void()> handler)
         {
             return _onLayoutChanged->Subscribe(handler);
+        }
+        // Emits the layout change event. Useful when 
+        void NotifyLayoutChanged()
+        {
+            _onLayoutChanged->InvokeAll();
         }
 
         // Main functions

@@ -4,6 +4,7 @@
 #include "WindowBackend.h"
 #include "WindowId.h"
 #include "WindowType.h"
+#include "Scenes/TooltipParams.h"
 
 #include "Window/KeyboardManager.h"
 #include "Helper/ResourceManager.h"
@@ -14,6 +15,7 @@
 
 #include <thread>
 #include <atomic>
+#include <future>
 
 class App;
 
@@ -139,7 +141,12 @@ namespace zwnd
         void NotifyBlockingWindow();
 
     public: // Other
+        // Opens a context menu constructed from the given template
+        // 'sourceItemRect' describes the item RECT from which to calculate menu placement in window coordinates
         void OpenContextMenu(zcom::MenuTemplate::Menu menuTemplate, RECT sourceItemRect);
+        // Shows a popup tooltip with the given text until the mouse is moved
+        // 'params.xPos' and 'params.yPos' parameters describe the position from which to calculate tooltip placement in window coordinates
+        void ShowTooltip(zcom::TooltipParams params);
 
     public: // Managers
         KeyboardManager keyboardManager;
@@ -207,6 +214,11 @@ namespace zwnd
         App* _app;
 
         std::optional<WindowSizeMessage> _windowSizeMessage;
+
+    private: // Other
+
+        // Tooltip
+        EventEmitter<void, zcom::TooltipParams> _tooltipEventEmitter = EventEmitter<void, zcom::TooltipParams>(EventEmitterThreadMode::MULTITHREADED);
 
     private: // Threads
         void _MessageThread();

@@ -75,6 +75,7 @@ class AsyncEventSubscription
     AsyncEventSubscription(uint64_t subId, std::weak_ptr<_EventEmitter<_Ret, _Types...>> emitterRef, std::function<void(_Types...)> syncHandlerFunc)
         : _subId(subId), _emitterRef(emitterRef), _syncHandlerFunc(syncHandlerFunc)
     {}
+    void _ReleaseAsyncSubscription();
 
     void _Invoke(_Types... args)
     {
@@ -107,6 +108,11 @@ public:
         std::lock_guard<std::mutex> lock(_m_handlerLock);
         _syncHandlerFunc = syncHandlerFunc;
     }
+
+    void Unsubscribe()
+    {
+        _ReleaseAsyncSubscription();
+    }
 };
 
 #include "EventEmitter.h"
@@ -132,6 +138,12 @@ void EventSubscription<_Ret, _Types...>::_ReleaseSubscription()
 
 template<class _Ret, class... _Types>
 AsyncEventSubscription<_Ret, _Types...>::~AsyncEventSubscription()
+{
+    _ReleaseAsyncSubscription();
+}
+
+template<class _Ret, class... _Types>
+void AsyncEventSubscription<_Ret, _Types...>::_ReleaseAsyncSubscription()
 {
     std::shared_ptr<_EventEmitter<_Ret, _Types...>> emitter = _emitterRef.lock();
     if (emitter)

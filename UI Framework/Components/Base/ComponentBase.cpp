@@ -28,5 +28,16 @@ void zcom::Component::_ShowHoverText()
     if (_hoverText.empty())
         return;
 
-    //_scene->GetApp()->Overlay()->ShowHoverText(_hoverText, GetWindowX() + GetMousePosX(), GetWindowY() + GetMousePosY());
+    TooltipParams params;
+    params.displayId = _id;
+    params.text = _hoverText;
+    params.xPos = GetWindowX() + GetMousePosX();
+    params.yPos = GetWindowY() + GetMousePosY();
+    params.mouseMovementBounds = Rect{
+        GetWindowX(),
+        GetWindowY(),
+        GetWindowX() + GetWidth(),
+        GetWindowY() + GetHeight()
+    };
+    _scene->GetWindow()->ShowTooltip(params);
 }
