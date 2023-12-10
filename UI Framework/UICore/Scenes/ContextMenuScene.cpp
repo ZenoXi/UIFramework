@@ -16,7 +16,7 @@ void zcom::ContextMenuScene::_Init(SceneOptionsBase* options)
         _canvas->AddComponent(_menuPanel.get());
     }
 
-    _canvas->SetBackgroundColor(D2D1::ColorF(0.2f, 0.2f, 0.2f));
+    _canvas->SetBackgroundColor(D2D1::ColorF(0.05f, 0.05f, 0.05f));
     _canvas->BasePanel()->SubscribeOnMouseMove([](zcom::Component* item, int x, int y) {
         //std::cout << item->GetMousePosX() << ":" << item->GetMousePosY() << '\n';
     }).Detach();

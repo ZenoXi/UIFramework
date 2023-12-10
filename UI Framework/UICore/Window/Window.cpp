@@ -67,6 +67,20 @@ zwnd::Window::Window(
     }
 }
 
+zwnd::Window::Window(HINSTANCE hinst)
+    : _id(WindowId::Generate()),
+    _windowMessageEvent(EventEmitterThreadMode::MULTITHREADED)
+{
+    _isMessageOnly = true;
+    _hinst = hinst;
+
+    // Start message thread
+    _messageThread = std::thread(&Window::_MessageOnlyThread, this);
+
+    // Wait for window to be created
+    while (!_windowCreated.load());
+}
+
 zwnd::Window::~Window()
 {
     _closed.store(true);
@@ -127,33 +141,6 @@ void zwnd::Window::ShowTooltip(zcom::TooltipParams params)
         params.mouseMovementBounds.value().bottom += windowRect.top;
     }
     _tooltipEventEmitter->InvokeAll(params);
-
-    //if (!_props.disableFastTooltips)
-    //{
-    //    RECT windowRect = _window->GetWindowRectangle();
-    //    x += windowRect.left;
-    //    y += windowRect.top;
-
-    //}
-
-    //std::optional<zwnd::WindowId> menuId = _app->CreateToolWindow(
-    //    _id,
-    //    zwnd::WindowProperties()
-    //        .WindowClassName(L"wndClassMenu")
-    //        .InitialSize(10, 10)
-    //        .InitialDisplay(zwnd::WindowDisplayType::HIDDEN)
-    //        .DisableWindowAnimations()
-    //        .DisableWindowActivation()
-    //        .DisableFastTooltips(),
-    //    [text, x, y, this](zwnd::Window* wnd)
-    //    {
-    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
-
-    //        zcom::TooltipSceneOptions opt;
-    //        //opt.showRequestSubscription = _tooltipEventEmitter->SubscribeAsync()
-    //        //wnd->LoadStartingScene<zcom::TooltipScene>(&opt);
-    //    }
-    //);
 }
 
 void zwnd::Window::_UninitScene(std::string name)
@@ -385,6 +372,45 @@ void zwnd::Window::_MessageThread()
 
     _window.reset();
     _onClosed(this);
+}
+
+void zwnd::Window::_MessageOnlyThread()
+{
+    _window = std::make_unique<WindowBackend>(_hinst);
+    _windowCreated.store(true);
+
+    Clock msgTimer = Clock(0);
+    while (true)
+    {
+        // Check for window close
+        if (_closed.load())
+            break;
+
+        // Messages
+        bool msgProcessed = _window->ProcessMessages();
+        _window->ProcessQueueMessages([&](WindowMessage msg) {
+            _windowMessageEvent->InvokeAll(msg);
+        });
+
+        // Limit cpu usage
+        if (!msgProcessed)
+        {
+            // If no messages are received for 50ms or more, sleep to limit cpu usage.
+            // This way we allow for full* mouse poll rate utilization when necessary.
+            //
+            // * the very first mouse move after a break will have a very small delay
+            // which may be noticeable in certain situations (FPS games)
+            msgTimer.Update();
+            if (msgTimer.Now().GetTime(MILLISECONDS) >= 50)
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        else
+        {
+            msgTimer.Reset();
+        }
+    }
+
+    _window.reset();
 }
 
 void zwnd::Window::_UIThread()

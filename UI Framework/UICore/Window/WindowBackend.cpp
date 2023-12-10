@@ -138,15 +138,58 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND
     }
 }
 
+zwnd::WindowBackend::WindowBackend(HINSTANCE hInst)
+    : _hInst(hInst),
+    _wndClassName(L"wndClassMessage")
+{
+    _messageOnly = true;
+
+    WNDCLASSEX wc = {
+        sizeof(WNDCLASSEX),
+        0,
+        _HandleMsgSetup,
+        0,
+        0,
+        hInst,
+        NULL,
+        NULL,
+        nullptr,
+        nullptr,
+        _wndClassName,
+        NULL
+    };
+    RegisterClassEx(&wc);
+
+    _hwnd = CreateWindowEx(
+        NULL,
+        _wndClassName,
+        nullptr,
+        NULL,
+        0, 0, 0, 0,
+        HWND_MESSAGE,
+        NULL,
+        hInst,
+        this
+    );
+}
+
 zwnd::WindowBackend::~WindowBackend()
 {
-    gfx.Close();
+    if (_messageOnly)
+    {
+        DestroyWindow(_hwnd);
+        UnregisterClass(_wndClassName, _hInst);
+    }
+    else
+    {
+        gfx.Close();
 
-    RevokeDragDrop(_hwnd);
-    DestroyWindow(_hwnd);
+        RevokeDragDrop(_hwnd);
+        DestroyWindow(_hwnd);
 
-    UnregisterClass(_wndClassName, _hInst);
-    OleUninitialize();
+        UnregisterClass(_wndClassName, _hInst);
+        OleUninitialize();
+    }
 }
 
 void zwnd::WindowBackend::LockSize()
@@ -256,12 +299,15 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
     {
         // TODO: investigate why app crashes on a mutex lock when WM_CREATE isn't handled
 
-        RAWINPUTDEVICE Rid[1];
-        Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
-        Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
-        Rid[0].dwFlags = RIDEV_INPUTSINK;
-        Rid[0].hwndTarget = hWnd;
-        RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
+        if (_messageOnly)
+        {
+            RAWINPUTDEVICE Rid[1];
+            Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+            Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+            Rid[0].dwFlags = RIDEV_INPUTSINK;
+            Rid[0].hwndTarget = hWnd;
+            RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
+        }
 
         //MARGINS margins = { 0 };
         //DwmExtendFrameIntoClientArea(hWnd, &margins);
@@ -442,7 +488,7 @@ LRESULT zwnd::WindowBackend::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARA
         {
             int deltaX = raw->data.mouse.lLastX;
             int deltaY = raw->data.mouse.lLastY;
-            //std::cout << x << ":" << y << '\n';
+            //std::cout << _hwnd << " - " << deltaX << ":" << deltaY << '\n';
 
             MouseInputMessage message;
             message.deltaX = deltaX;

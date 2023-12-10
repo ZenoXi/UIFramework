@@ -83,7 +83,7 @@ void zcom::TooltipScene::_Update()
             _window->Backend().SetWindowRectangle(finalRect);
             _window->Backend().SetDisplayType(zwnd::WindowDisplayType::NORMAL_NOACTIVATE);
 
-            _windowMessageSubscription = _window->SubscribeToWindowMessages([=](zwnd::WindowMessage message) {
+            _windowMessageSubscription = _app->GetMessageWindow()->SubscribeToWindowMessages([=](zwnd::WindowMessage message) {
                 if (message.id == zwnd::MouseInputMessage::ID())
                 {
                     POINT cursorPos;

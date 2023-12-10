@@ -33,6 +33,8 @@ namespace zwnd
             std::function<void(Window* window)> initFunction,
             std::function<void(Window* window)> onClosed
         );
+        // Constructor for message-only window
+        Window(HINSTANCE hinst);
         ~Window();
         // Initialize the specified title bar scene. Should be called in the window init function *AT MOST ONCE*
         template<class _Scene>
@@ -201,6 +203,7 @@ namespace zwnd
 
         HINSTANCE _hinst;
         WindowProperties _props;
+        bool _isMessageOnly = false;
         std::unique_ptr<WindowBackend> _window = nullptr;
 
         // Becomes true when window is closed
@@ -222,6 +225,7 @@ namespace zwnd
 
     private: // Threads
         void _MessageThread();
+        void _MessageOnlyThread();
         void _UIThread();
         std::thread _messageThread;
         std::thread _uiThread;

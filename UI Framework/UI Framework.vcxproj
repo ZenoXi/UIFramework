@@ -72,19 +72,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>F:\Visual Studio projects\Major\UI Framework\UI Framework;$(IncludePath)</IncludePath>
+    <IncludePath>F:\Visual Studio projects\Major\UI Framework\UI Framework\UICore;F:\Visual Studio projects\Major\UI Framework\UI Framework;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>F:\Visual Studio projects\Major\UI Framework\UI Framework;$(IncludePath)</IncludePath>
+    <IncludePath>F:\Visual Studio projects\Major\UI Framework\UI Framework\UICore;F:\Visual Studio projects\Major\UI Framework\UI Framework;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>F:\Visual Studio projects\Major\UI Framework\UI Framework\UICore;$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>F:\Visual Studio projects\Major\UI Framework\UI Framework\UICore;$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -155,103 +155,104 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="App.cpp" />
-    <ClCompile Include="Components\Base\Button.cpp" />
-    <ClCompile Include="Components\Base\Checkbox.cpp" />
-    <ClCompile Include="Components\Base\ComponentBase.cpp" />
-    <ClCompile Include="Components\Base\DirectionalPanel.cpp" />
-    <ClCompile Include="Components\Base\Label.cpp" />
-    <ClCompile Include="Components\Base\MenuPanel.cpp" />
-    <ClCompile Include="Components\Base\TextInput.cpp" />
-    <ClCompile Include="D2DEffects\TintEffect.cpp" />
-    <ClCompile Include="Helper\StringHelper.cpp" />
-    <ClCompile Include="Helper\Time.cpp" />
-    <ClCompile Include="Helper\ResourceManager.cpp" />
-    <ClCompile Include="Scenes\ContextMenuScene.cpp">
+    <ClCompile Include="UICore\App.cpp" />
+    <ClCompile Include="UICore\Components\Base\Button.cpp" />
+    <ClCompile Include="UICore\Components\Base\Checkbox.cpp" />
+    <ClCompile Include="UICore\Components\Base\ComponentBase.cpp" />
+    <ClCompile Include="UICore\Components\Base\DirectionalPanel.cpp" />
+    <ClCompile Include="UICore\Components\Base\Label.cpp" />
+    <ClCompile Include="UICore\Components\Base\MenuItem.cpp" />
+    <ClCompile Include="UICore\Components\Base\MenuPanel.cpp" />
+    <ClCompile Include="UICore\Components\Base\TextInput.cpp" />
+    <ClCompile Include="UICore\D2DEffects\TintEffect.cpp" />
+    <ClCompile Include="UICore\Helper\StringHelper.cpp" />
+    <ClCompile Include="UICore\Helper\Time.cpp" />
+    <ClCompile Include="UICore\Helper\ResourceManager.cpp" />
+    <ClCompile Include="UICore\Scenes\ContextMenuScene.cpp">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="Scenes\DefaultNonClientAreaScene.cpp" />
-    <ClCompile Include="Scenes\EntryScene.cpp" />
-    <ClCompile Include="Scenes\Scene.cpp" />
-    <ClCompile Include="Scenes\DefaultTitleBarScene.cpp" />
-    <ClCompile Include="Scenes\TestScene.cpp">
+    <ClCompile Include="UICore\Scenes\DefaultNonClientAreaScene.cpp" />
+    <ClCompile Include="UICore\Scenes\EntryScene.cpp" />
+    <ClCompile Include="UICore\Scenes\Scene.cpp" />
+    <ClCompile Include="UICore\Scenes\DefaultTitleBarScene.cpp" />
+    <ClCompile Include="UICore\Scenes\TestScene.cpp">
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="Scenes\TooltipScene.cpp" />
+    <ClCompile Include="UICore\Scenes\TooltipScene.cpp" />
     <ClCompile Include="UI Framework.cpp" />
-    <ClCompile Include="Window\DisplayWindow.cpp" />
-    <ClCompile Include="Window\Window.cpp" />
-    <ClCompile Include="Window\WindowBackend.cpp" />
-    <ClCompile Include="Window\WindowGraphics.cpp" />
+    <ClCompile Include="UICore\Window\DisplayWindow.cpp" />
+    <ClCompile Include="UICore\Window\Window.cpp" />
+    <ClCompile Include="UICore\Window\WindowBackend.cpp" />
+    <ClCompile Include="UICore\Window\WindowGraphics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App.h" />
-    <ClInclude Include="Components\Base\Button.h" />
-    <ClInclude Include="Components\Base\Canvas.h" />
-    <ClInclude Include="Components\Base\Checkbox.h" />
-    <ClInclude Include="Components\Base\ComponentBase.h" />
-    <ClInclude Include="Components\Base\DirectionalPanel.h" />
-    <ClInclude Include="Components\Base\EmptyPanel.h" />
-    <ClInclude Include="Components\Base\MenuTemplate.h" />
-    <ClInclude Include="Components\Base\Image.h" />
-    <ClInclude Include="Components\Base\Label.h" />
-    <ClInclude Include="Components\Base\MenuItem.h" />
-    <ClInclude Include="Components\Base\MenuPanel.h" />
-    <ClInclude Include="Components\Base\NumberInput.h" />
-    <ClInclude Include="Components\Base\Panel.h" />
-    <ClInclude Include="Components\Base\TextInput.h" />
-    <ClInclude Include="Components\ComHelper.h" />
-    <ClInclude Include="Components\Custom\DitheredBackground.h" />
-    <ClInclude Include="D2DEffects\TintEffect.h" />
-    <ClInclude Include="Helper\decimal.h" />
-    <ClInclude Include="Helper\EventEmitter.h" />
-    <ClInclude Include="Helper\EventSubscription.h" />
-    <ClInclude Include="Helper\Handle.h" />
-    <ClInclude Include="Helper\MiscUtils.h" />
-    <ClInclude Include="Helper\StringHelper.h" />
-    <ClInclude Include="Helper\Time.h" />
-    <ClInclude Include="Helper\ResourceManager.h" />
-    <ClInclude Include="Scenes\ContextMenuScene.h">
+    <ClInclude Include="UICore\App.h" />
+    <ClInclude Include="UICore\Components\Base\Button.h" />
+    <ClInclude Include="UICore\Components\Base\Canvas.h" />
+    <ClInclude Include="UICore\Components\Base\Checkbox.h" />
+    <ClInclude Include="UICore\Components\Base\ComponentBase.h" />
+    <ClInclude Include="UICore\Components\Base\DirectionalPanel.h" />
+    <ClInclude Include="UICore\Components\Base\EmptyPanel.h" />
+    <ClInclude Include="UICore\Components\Base\MenuTemplate.h" />
+    <ClInclude Include="UICore\Components\Base\Image.h" />
+    <ClInclude Include="UICore\Components\Base\Label.h" />
+    <ClInclude Include="UICore\Components\Base\MenuItem.h" />
+    <ClInclude Include="UICore\Components\Base\MenuPanel.h" />
+    <ClInclude Include="UICore\Components\Base\NumberInput.h" />
+    <ClInclude Include="UICore\Components\Base\Panel.h" />
+    <ClInclude Include="UICore\Components\Base\TextInput.h" />
+    <ClInclude Include="UICore\Components\ComHelper.h" />
+    <ClInclude Include="UICore\Components\Custom\DitheredBackground.h" />
+    <ClInclude Include="UICore\D2DEffects\TintEffect.h" />
+    <ClInclude Include="UICore\Helper\decimal.h" />
+    <ClInclude Include="UICore\Helper\EventEmitter.h" />
+    <ClInclude Include="UICore\Helper\EventSubscription.h" />
+    <ClInclude Include="UICore\Helper\Handle.h" />
+    <ClInclude Include="UICore\Helper\MiscUtils.h" />
+    <ClInclude Include="UICore\Helper\StringHelper.h" />
+    <ClInclude Include="UICore\Helper\Time.h" />
+    <ClInclude Include="UICore\Helper\ResourceManager.h" />
+    <ClInclude Include="UICore\Scenes\ContextMenuScene.h">
       <SubType>
       </SubType>
     </ClInclude>
-    <ClInclude Include="Scenes\DefaultNonClientAreaScene.h" />
-    <ClInclude Include="Scenes\EntryScene.h" />
-    <ClInclude Include="Scenes\Scene.h" />
-    <ClInclude Include="Scenes\DefaultTitleBarScene.h" />
-    <ClInclude Include="Scenes\TestScene.h">
+    <ClInclude Include="UICore\Scenes\DefaultNonClientAreaScene.h" />
+    <ClInclude Include="UICore\Scenes\EntryScene.h" />
+    <ClInclude Include="UICore\Scenes\Scene.h" />
+    <ClInclude Include="UICore\Scenes\DefaultTitleBarScene.h" />
+    <ClInclude Include="UICore\Scenes\TestScene.h">
       <SubType>
       </SubType>
     </ClInclude>
-    <ClInclude Include="Scenes\TooltipParams.h" />
-    <ClInclude Include="Scenes\TooltipScene.h" />
-    <ClInclude Include="Window\CursorIcon.h" />
-    <ClInclude Include="Window\FileDropHandler.h" />
-    <ClInclude Include="Window\GdiInclude.h" />
-    <ClInclude Include="Window\Window.h" />
-    <ClInclude Include="Window\WindowBackend.h" />
-    <ClInclude Include="Window\WindowDisplayType.h" />
-    <ClInclude Include="Window\WindowGraphics.h" />
-    <ClInclude Include="Window\WindowId.h" />
-    <ClInclude Include="Window\WindowMessage.h" />
-    <ClInclude Include="Window\WindowProperties.h" />
-    <ClInclude Include="Window\WindowsEx.h" />
-    <ClInclude Include="Window\DisplayWindow.h" />
-    <ClInclude Include="Window\DragDropEventHandler.h" />
-    <ClInclude Include="Window\Graphics.h" />
-    <ClInclude Include="Window\KeyboardEventHandler.h" />
-    <ClInclude Include="Window\KeyboardManager.h" />
-    <ClInclude Include="Window\MouseEventHandler.h" />
-    <ClInclude Include="Window\MouseManager.h" />
-    <ClInclude Include="Window\WindowType.h" />
+    <ClInclude Include="UICore\Scenes\TooltipParams.h" />
+    <ClInclude Include="UICore\Scenes\TooltipScene.h" />
+    <ClInclude Include="UICore\Window\CursorIcon.h" />
+    <ClInclude Include="UICore\Window\FileDropHandler.h" />
+    <ClInclude Include="UICore\Window\GdiInclude.h" />
+    <ClInclude Include="UICore\Window\Window.h" />
+    <ClInclude Include="UICore\Window\WindowBackend.h" />
+    <ClInclude Include="UICore\Window\WindowDisplayType.h" />
+    <ClInclude Include="UICore\Window\WindowGraphics.h" />
+    <ClInclude Include="UICore\Window\WindowId.h" />
+    <ClInclude Include="UICore\Window\WindowMessage.h" />
+    <ClInclude Include="UICore\Window\WindowProperties.h" />
+    <ClInclude Include="UICore\Window\WindowsEx.h" />
+    <ClInclude Include="UICore\Window\DisplayWindow.h" />
+    <ClInclude Include="UICore\Window\DragDropEventHandler.h" />
+    <ClInclude Include="UICore\Window\Graphics.h" />
+    <ClInclude Include="UICore\Window\KeyboardEventHandler.h" />
+    <ClInclude Include="UICore\Window\KeyboardManager.h" />
+    <ClInclude Include="UICore\Window\MouseEventHandler.h" />
+    <ClInclude Include="UICore\Window\MouseManager.h" />
+    <ClInclude Include="UICore\Window\WindowType.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="TintEffect.cso" />
+    <None Include="UICore\TintEffect.cso" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="D2DEffects\TintEffect.hlsl">
+    <FxCompile Include="UICore\D2DEffects\TintEffect.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

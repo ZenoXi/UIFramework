@@ -163,47 +163,11 @@ namespace zcom
         friend class Component;
         MenuItem(Scene* scene) : Component(scene), _id(_GenerateId()) {}
         // Separator
-        void Init()
-        {
-            _separator = true;
-
-            SetBaseHeight(3);
-            SetParentWidthPercent(1.0f);
-        }
+        void Init();
         // Regular button/check item
-        void Init(std::wstring text, std::function<void(bool)> onClick = [](bool) {})
-        {
-            _onClick = onClick;
-
-            _label = Create<Label>(text);
-            _label->Resize(GetWidth() - 50, GetHeight());
-            _label->SetVerticalTextAlignment(zcom::Alignment::CENTER);
-            _label->SetMargins({ 5.0f });
-            _label->SetCutoff(L"...");
-            _label->SetFont(L"Segoe UI");
-            _label->SetFontSize(13.0f);
-            _label->SetFontColor(D2D1::ColorF(D2D1::ColorF::White));
-
-            _iconImage = Create<zcom::Image>();
-            _iconImage->SetSize(25, 25);
-            _iconImage->SetPlacement(ImagePlacement::CENTER);
-
-            _checkmarkIcon = ResourceManagerOld::GetImage("checkmark_50x50");
-
-            SetBaseHeight(25);
-            SetParentWidthPercent(1.0f);
-        }
+        void Init(std::wstring text, std::function<void(bool)> onClick = [](bool) {});
         // Deeper menu
-        void Init(MenuTemplate::Menu menu, std::wstring text)
-        {
-            Init(text);
-
-            _menu = std::move(menu);
-            _menuExpandImage = Create<zcom::Image>(ResourceManagerOld::GetImage("menu_arrow_right_7x7"));
-            _menuExpandImage->SetSize(25, 25);
-            _menuExpandImage->SetPlacement(ImagePlacement::CENTER);
-            _menuExpandImage->SetTintColor(D2D1::ColorF(0.5f, 0.5f, 0.5f));
-        }
+        void Init(MenuTemplate::Menu menu, std::wstring text);
 
         Id _GenerateId()
         {

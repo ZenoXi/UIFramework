@@ -24,241 +24,244 @@
     <ClCompile Include="UI Framework.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App.cpp">
+    <ClCompile Include="UICore\App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Components\Base\Button.cpp">
+    <ClCompile Include="UICore\Components\Base\Button.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Components\Base\Checkbox.cpp">
+    <ClCompile Include="UICore\Components\Base\Checkbox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Components\Base\ComponentBase.cpp">
+    <ClCompile Include="UICore\Components\Base\ComponentBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Components\Base\DirectionalPanel.cpp">
+    <ClCompile Include="UICore\Components\Base\DirectionalPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Components\Base\Label.cpp">
+    <ClCompile Include="UICore\Components\Base\Label.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Components\Base\MenuPanel.cpp">
+    <ClCompile Include="UICore\Components\Base\MenuPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Components\Base\TextInput.cpp">
+    <ClCompile Include="UICore\Components\Base\TextInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Window\DisplayWindow.cpp">
+    <ClCompile Include="UICore\Window\DisplayWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Helper\ResourceManager.cpp">
+    <ClCompile Include="UICore\Helper\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\Scene.cpp">
+    <ClCompile Include="UICore\Scenes\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\EntryScene.cpp">
+    <ClCompile Include="UICore\Scenes\EntryScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Helper\Time.cpp">
+    <ClCompile Include="UICore\Helper\Time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Helper\StringHelper.cpp">
+    <ClCompile Include="UICore\Helper\StringHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D2DEffects\TintEffect.cpp">
+    <ClCompile Include="UICore\D2DEffects\TintEffect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Window\WindowBackend.cpp">
+    <ClCompile Include="UICore\Window\WindowBackend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Window\Window.cpp">
+    <ClCompile Include="UICore\Window\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\DefaultTitleBarScene.cpp">
+    <ClCompile Include="UICore\Scenes\DefaultTitleBarScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\DefaultNonClientAreaScene.cpp">
+    <ClCompile Include="UICore\Scenes\DefaultNonClientAreaScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Window\WindowGraphics.cpp">
+    <ClCompile Include="UICore\Window\WindowGraphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\TestScene.cpp">
+    <ClCompile Include="UICore\Scenes\TestScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\ContextMenuScene.cpp">
+    <ClCompile Include="UICore\Scenes\ContextMenuScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\TooltipScene.cpp">
+    <ClCompile Include="UICore\Scenes\TooltipScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UICore\Components\Base\MenuItem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App.h">
+    <ClInclude Include="UICore\App.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\Button.h">
+    <ClInclude Include="UICore\Components\Base\Button.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\Canvas.h">
+    <ClInclude Include="UICore\Components\Base\Canvas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\Checkbox.h">
+    <ClInclude Include="UICore\Components\Base\Checkbox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\ComponentBase.h">
+    <ClInclude Include="UICore\Components\Base\ComponentBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\DirectionalPanel.h">
+    <ClInclude Include="UICore\Components\Base\DirectionalPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\EmptyPanel.h">
+    <ClInclude Include="UICore\Components\Base\EmptyPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\Image.h">
+    <ClInclude Include="UICore\Components\Base\Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\Label.h">
+    <ClInclude Include="UICore\Components\Base\Label.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\MenuItem.h">
+    <ClInclude Include="UICore\Components\Base\MenuItem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\MenuPanel.h">
+    <ClInclude Include="UICore\Components\Base\MenuPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\NumberInput.h">
+    <ClInclude Include="UICore\Components\Base\NumberInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\Panel.h">
+    <ClInclude Include="UICore\Components\Base\Panel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\TextInput.h">
+    <ClInclude Include="UICore\Components\Base\TextInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\ComHelper.h">
+    <ClInclude Include="UICore\Components\ComHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\DisplayWindow.h">
+    <ClInclude Include="UICore\Window\DisplayWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\DragDropEventHandler.h">
+    <ClInclude Include="UICore\Window\DragDropEventHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\KeyboardEventHandler.h">
+    <ClInclude Include="UICore\Window\KeyboardEventHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\KeyboardManager.h">
+    <ClInclude Include="UICore\Window\KeyboardManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\MouseEventHandler.h">
+    <ClInclude Include="UICore\Window\MouseEventHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\MouseManager.h">
+    <ClInclude Include="UICore\Window\MouseManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\ResourceManager.h">
+    <ClInclude Include="UICore\Helper\ResourceManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\Graphics.h">
+    <ClInclude Include="UICore\Window\Graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\Scene.h">
+    <ClInclude Include="UICore\Scenes\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\EventEmitter.h">
+    <ClInclude Include="UICore\Helper\EventEmitter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\EntryScene.h">
+    <ClInclude Include="UICore\Scenes\EntryScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\Time.h">
+    <ClInclude Include="UICore\Helper\Time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\StringHelper.h">
+    <ClInclude Include="UICore\Helper\StringHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\WindowsEx.h">
+    <ClInclude Include="UICore\Window\WindowsEx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D2DEffects\TintEffect.h">
+    <ClInclude Include="UICore\D2DEffects\TintEffect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\decimal.h">
+    <ClInclude Include="UICore\Helper\decimal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\GdiInclude.h">
+    <ClInclude Include="UICore\Window\GdiInclude.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\Window.h">
+    <ClInclude Include="UICore\Window\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\WindowBackend.h">
+    <ClInclude Include="UICore\Window\WindowBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\FileDropHandler.h">
+    <ClInclude Include="UICore\Window\FileDropHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\DefaultTitleBarScene.h">
+    <ClInclude Include="UICore\Scenes\DefaultTitleBarScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\DefaultNonClientAreaScene.h">
+    <ClInclude Include="UICore\Scenes\DefaultNonClientAreaScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\WindowGraphics.h">
+    <ClInclude Include="UICore\Window\WindowGraphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\WindowProperties.h">
+    <ClInclude Include="UICore\Window\WindowProperties.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Custom\DitheredBackground.h">
+    <ClInclude Include="UICore\Components\Custom\DitheredBackground.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\WindowMessage.h">
+    <ClInclude Include="UICore\Window\WindowMessage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\CursorIcon.h">
+    <ClInclude Include="UICore\Window\CursorIcon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\TestScene.h">
+    <ClInclude Include="UICore\Scenes\TestScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\WindowId.h">
+    <ClInclude Include="UICore\Window\WindowId.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\Handle.h">
+    <ClInclude Include="UICore\Helper\Handle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\WindowType.h">
+    <ClInclude Include="UICore\Window\WindowType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\EventSubscription.h">
+    <ClInclude Include="UICore\Helper\EventSubscription.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Base\MenuTemplate.h">
+    <ClInclude Include="UICore\Components\Base\MenuTemplate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\ContextMenuScene.h">
+    <ClInclude Include="UICore\Scenes\ContextMenuScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper\MiscUtils.h">
+    <ClInclude Include="UICore\Helper\MiscUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window\WindowDisplayType.h">
+    <ClInclude Include="UICore\Window\WindowDisplayType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\TooltipScene.h">
+    <ClInclude Include="UICore\Scenes\TooltipScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\TooltipParams.h">
+    <ClInclude Include="UICore\Scenes\TooltipParams.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="TintEffect.cso" />
+    <None Include="UICore\TintEffect.cso" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="D2DEffects\TintEffect.hlsl" />
+    <FxCompile Include="UICore\D2DEffects\TintEffect.hlsl" />
   </ItemGroup>
 </Project>

@@ -39,6 +39,7 @@ public:
 
     Handle<zwnd::Window> GetWindow(zwnd::WindowId windowId);
     Handle<zwnd::Window> GetWindowNoLock(zwnd::WindowId windowId);
+    zwnd::Window* GetMessageWindow();
     bool WindowsClosed();
 private:
     // _m_windows must be locked before calling
@@ -49,15 +50,6 @@ private:
     void _TryDestruct(zwnd::WindowId windowId);
 
     void _RemoveUnusedWindows();
-
-    void smth()
-    {
-        //App app(hinst);
-        //app.CreateTopWindow(windowProps, []() {});
-        //app.CreateChildWindow(parentWindowId, childWindowProps, windowProps, []() {});
-        //app.CreateToolWindow(parentWindowId, windowProps, []() {});
-        //app.GetWindow()
-    }
 
 private:
     HINSTANCE _hinst;
@@ -70,6 +62,8 @@ private:
     };
     std::vector<WindowInfo> _windows;
     std::mutex _m_windows;
+
+    std::unique_ptr<zwnd::Window> _messageWindow;
 
     std::thread _windowCleaningThread;
     std::atomic<bool> _closeThread;

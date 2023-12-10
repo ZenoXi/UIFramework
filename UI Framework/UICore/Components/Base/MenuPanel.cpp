@@ -14,7 +14,7 @@ void zcom::MenuPanel::Init(MenuParams params)
 {
     Panel::Init();
 
-    SetBackgroundColor(D2D1::ColorF(0.2f, 0.2f, 0.2f));
+    SetBackgroundColor(D2D1::ColorF(0.05f, 0.05f, 0.05f));
 
     _parentRect = params.parentRect;
     _bounds = _scene->GetWindow()->Backend().GetMonitorRectAtWindowPoint(_parentRect.right, _parentRect.top);

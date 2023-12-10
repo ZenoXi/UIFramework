@@ -116,6 +116,8 @@ namespace zwnd
         WindowGraphics gfx;
 
         WindowBackend(HINSTANCE hInst, WindowProperties props, HWND parentWindow);
+        // Message-only window constructor
+        WindowBackend(HINSTANCE hInst);
         WindowBackend(const WindowBackend&) = delete;
         WindowBackend& operator=(const WindowBackend&) = delete;
         ~WindowBackend();
@@ -187,6 +189,8 @@ namespace zwnd
         static LRESULT WINAPI _HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
         static LRESULT WINAPI _HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
         LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+        bool _messageOnly = false;
 
         std::mutex _m_msg;
         WindowMessage _sizeResult;

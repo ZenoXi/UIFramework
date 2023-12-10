@@ -2,6 +2,7 @@
 
 App::App(HINSTANCE hinst) : _hinst(hinst)
 {
+    _messageWindow = std::make_unique<zwnd::Window>(_hinst);
     _windowCleaningThread = std::thread(&App::_RemoveUnusedWindows, this);
 }
 
@@ -135,6 +136,11 @@ Handle<zwnd::Window> App::GetWindowNoLock(zwnd::WindowId windowId)
         }
     }
     return Handle<zwnd::Window>(nullptr, [&]() {});
+}
+
+zwnd::Window* App::GetMessageWindow()
+{
+    return _messageWindow.get();
 }
 
 bool App::WindowsClosed()
