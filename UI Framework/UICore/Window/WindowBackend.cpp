@@ -58,11 +58,25 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND
 
     // Calculate initial window size
     RECT workRect;
-    SystemParametersInfo(SPI_GETWORKAREA, 0, &workRect, 0);
+    if (props.ignoreTaskbarForPlacement)
+    {
+        workRect.left = 0;
+        workRect.top = 0;
+        workRect.right = GetSystemMetrics(SM_CXSCREEN);
+        workRect.bottom = GetSystemMetrics(SM_CYSCREEN);
+    }
+    else
+    {
+        SystemParametersInfo(SPI_GETWORKAREA, 0, &workRect, 0);
+    }
     int x = (workRect.right - props.initialWidth) / 2;
     int y = (workRect.bottom - props.initialHeight) / 2;
     int w = props.initialWidth;
     int h = props.initialHeight;
+    if (props.initialXOffset)
+        x = props.initialXOffset.value();
+    if (props.initialYOffset)
+        y = props.initialYOffset.value();
 
     // Set windowed rect size
     _windowedRect.left = x;
@@ -81,7 +95,7 @@ zwnd::WindowBackend::WindowBackend(HINSTANCE hInst, WindowProperties props, HWND
     
     // Create and show window
     _hwnd = CreateWindowEx(
-        WS_EX_LAYERED | (_activationDisabled ? WS_EX_NOACTIVATE : NULL) | (props.disableMouseInteraction ? WS_EX_TRANSPARENT : NULL),
+        WS_EX_LAYERED | (_activationDisabled ? WS_EX_NOACTIVATE : NULL) | (props.disableMouseInteraction ? WS_EX_TRANSPARENT : NULL) | (props.topMost ? WS_EX_TOPMOST : NULL),
         _wndClassName,
         nullptr,
         windowStyle,

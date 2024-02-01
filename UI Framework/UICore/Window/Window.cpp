@@ -233,7 +233,16 @@ void zwnd::Window::_HandleMessage(WindowMessage msg)
         int x = message.x;
         int y = message.y;
 
-        _BuildMasterPanel()->OnLeftPressed(x, y);
+        auto masterPanel = _BuildMasterPanel();
+        zcom::EventTargets targets = masterPanel->OnLeftPressed(x, y);
+
+        // Update selected item
+        zcom::Component* mainTarget = targets.MainTarget();
+        for (auto component : masterPanel->GetAllChildren())
+            if (component != mainTarget && component->Selected())
+                component->OnDeselected();
+        if (mainTarget != nullptr && !mainTarget->Selected() && mainTarget->GetSelectable())
+            mainTarget->OnSelected();
     }
     else if (msg.id == MouseRightPressedMessage::ID())
     {
@@ -441,11 +450,19 @@ void zwnd::Window::_UIThread()
     {
         _window->LockSize();
 
+        ztime::clock[CLOCK_GAME].Update();
+        ztime::clock[CLOCK_MAIN].Update();
+
         _windowSizeMessage = std::nullopt;
         _window->ProcessQueueMessages([&](WindowMessage msg) { Window::_HandleMessage(msg); });
 
-        ztime::clock[CLOCK_GAME].Update();
-        ztime::clock[CLOCK_MAIN].Update();
+        if (_sceneChanged && !_windowSizeMessage.has_value())
+        {
+            WindowSizeMessage sizeMsg{};
+            sizeMsg.width = _window->GetWidth();
+            sizeMsg.height = _window->GetHeight();
+            _windowSizeMessage = sizeMsg;
+        }
 
         // Check for resize
         if (_windowSizeMessage.has_value())
@@ -595,7 +612,8 @@ void zwnd::Window::_UIThread()
                 // Draw the title bar scene
                 if (((zcom::Scene*)_titleBarScene.get())->Redraw())
                     ((zcom::Scene*)_titleBarScene.get())->Draw(g);
-                g.target->DrawBitmap(((zcom::Scene*)_titleBarScene.get())->ContentImage());
+                if (_titleBarScene->TitleBarSceneHeight() > 0)
+                    g.target->DrawBitmap(((zcom::Scene*)_titleBarScene.get())->ContentImage());
             }
 
             // Draw other scenes

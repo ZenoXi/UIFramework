@@ -5,11 +5,16 @@
 #include "Helper/EventEmitter.h"
 #include "Window/WindowMessage.h"
 
+#include <optional>
+
 namespace zcom
 {
     struct DefaultNonClientAreaSceneOptions : public SceneOptionsBase
     {
-
+        RECT resizingBorderWidths = { 7, 7, 7, 7 };
+        RECT clientAreaMargins = { 7, 7, 7, 7 };
+        bool drawWindowShadow = true;
+        bool drawWindowBorder = true;
     };
 
     class DefaultNonClientAreaScene : public Scene
@@ -34,6 +39,11 @@ namespace zcom
         ID2D1Bitmap* _clientAreaBitmap = nullptr;
         ID2D1Bitmap* _titleBarBitmap = nullptr;
         ID2D1Bitmap* _contentBitmap = nullptr;
+
+        RECT _resizingBorderWidths{};
+        RECT _clientAreaMargins{};
+        bool _drawWindowShadow = true;
+        bool _drawWindowBorder = true;
 
         //D2D1_COLOR_F _borderColor = D2D1::ColorF(0.3f, 0.3f, 0.3f, 0.5f);
         //D2D1_VECTOR_4F _shadowColor = D2D1::Vector4F(0.0f, 0.0f, 0.0f, 0.4f);

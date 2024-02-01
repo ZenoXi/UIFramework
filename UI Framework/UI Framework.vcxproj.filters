@@ -36,9 +36,6 @@
     <ClCompile Include="UICore\Components\Base\ComponentBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UICore\Components\Base\DirectionalPanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="UICore\Components\Base\Label.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -96,6 +93,15 @@
     <ClCompile Include="UICore\Components\Base\MenuItem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UICore\Components\Base\FlexPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UICore\Components\Base\NumberInput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UICore\Components\Base\ScrollPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UICore\App.h">
@@ -111,9 +117,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UICore\Components\Base\ComponentBase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UICore\Components\Base\DirectionalPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UICore\Components\Base\EmptyPanel.h">
@@ -255,6 +258,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UICore\Scenes\TooltipParams.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Components\Base\FlexPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Components\Base\ScrollPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

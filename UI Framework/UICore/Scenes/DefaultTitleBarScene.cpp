@@ -14,16 +14,25 @@ void zcom::DefaultTitleBarScene::_Init(SceneOptionsBase* options)
     if (options)
         opt = *reinterpret_cast<const DefaultTitleBarSceneOptions*>(options);
 
+    _titleBarHeight = opt.titleBarHeight;
+    _captionHeight = opt.captionHeight;
+    _tintIcon = !opt.windowIconResourceName;
+
     // The following functions set up the default title bar look
     // See the function implementations for details on achieving
     // the default look
 
     SetBackground(D2D1::ColorF(1.0f, 1.0f, 1.0f));
-    AddCloseButton();
-    AddMaximizeButton();
-    AddMinimizeButton();
-    AddIcon(_window->resourceManager.GetImage("window_app_icon"));
-    AddTitle(opt.windowTitle);
+    if (opt.showCloseButton)
+        AddCloseButton();
+    if (opt.showMaximizeButton)
+        AddMaximizeButton();
+    if (opt.showMinimizeButton)
+        AddMinimizeButton();
+    if (opt.showIcon)
+        AddIcon(_window->resourceManager.GetImage(opt.windowIconResourceName.value_or("window_app_icon")));
+    if (opt.showTitle)
+        AddTitle(opt.windowTitle);
     AddMenuButton(L"File");
     AddMenuButton(L"Edit");
     AddMenuButton(L"View");
@@ -52,6 +61,7 @@ void zcom::DefaultTitleBarScene::AddCloseButton()
     _closeButton->ButtonImage()->SetTintColor(_activeItemTint);
     _closeButton->ButtonHoverImage()->SetTintColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
     _closeButton->ButtonClickImage()->SetTintColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
+    _closeButton->SetSelectable(false);
     _closeButton->SetActivation(ButtonActivation::RELEASE);
     _closeButton->SubscribeOnActivated([&]() {
         _window->Close();
@@ -75,6 +85,7 @@ void zcom::DefaultTitleBarScene::AddMaximizeButton()
     _maximizeButton->SetButtonColor(D2D1::ColorF(0, 0.0f));
     _maximizeButton->SetButtonHoverColor(D2D1::ColorF(0, 0.1f));
     _maximizeButton->SetButtonClickColor(D2D1::ColorF(0, 0.2f));
+    _maximizeButton->SetSelectable(false);
     _maximizeButton->SetActivation(ButtonActivation::RELEASE);
     _maximizeButton->SubscribeOnActivated([&]() {
         if (_window->Backend().Maximized())
@@ -103,6 +114,7 @@ void zcom::DefaultTitleBarScene::AddMinimizeButton()
     _minimizeButton->SetButtonColor(D2D1::ColorF(0, 0.0f));
     _minimizeButton->SetButtonHoverColor(D2D1::ColorF(0, 0.1f));
     _minimizeButton->SetButtonClickColor(D2D1::ColorF(0, 0.2f));
+    _minimizeButton->SetSelectable(false);
     _minimizeButton->SetActivation(ButtonActivation::RELEASE);
     _minimizeButton->SubscribeOnActivated([&]() {
         _window->Backend().Minimize();
@@ -113,11 +125,12 @@ void zcom::DefaultTitleBarScene::AddMinimizeButton()
 
 void zcom::DefaultTitleBarScene::AddIcon(ID2D1Bitmap* icon)
 {
-    _iconImage = Create<Image>(_window->resourceManager.GetImage("window_app_icon"));
+    _iconImage = Create<Image>(icon);
     _iconImage->SetBaseSize(29, 29);
     _iconImage->SetPlacement(ImagePlacement::CENTER);
     _iconImage->SetPixelSnap(true);
-    _iconImage->SetTintColor(D2D1::ColorF(0));
+    if (_tintIcon)
+        _iconImage->SetTintColor(D2D1::ColorF(0));
 
     _canvas->AddComponent(_iconImage.get());
 }
@@ -148,12 +161,12 @@ void zcom::DefaultTitleBarScene::AddMenuButton(std::wstring name)
 
 int zcom::DefaultTitleBarScene::TitleBarSceneHeight()
 {
-    return 30;
+    return _titleBarHeight;
 }
 
 int zcom::DefaultTitleBarScene::CaptionHeight()
 {
-    return 30;
+    return _captionHeight;
 }
 
 
@@ -259,7 +272,7 @@ void zcom::DefaultTitleBarScene::HandleWindowStateChanges()
                 if (_titleLabel)
                     _titleLabel->SetFontColor(newColor);
             }
-            });
+        });
     }
 }
 

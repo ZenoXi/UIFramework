@@ -8,11 +8,21 @@
 #include "Components/Base/Image.h"
 #include "Helper/EventEmitter.h"
 
+#include <optional>
+
 namespace zcom
 {
     struct DefaultTitleBarSceneOptions : public SceneOptionsBase
     {
+        std::optional<std::string> windowIconResourceName = std::nullopt;
         std::wstring windowTitle = L"UI Framework";
+        bool showCloseButton = true;
+        bool showMaximizeButton = true;
+        bool showMinimizeButton = true;
+        bool showTitle = true;
+        bool showIcon = true;
+        int titleBarHeight = 30;
+        int captionHeight = 30;
     };
 
     class DefaultTitleBarScene : public Scene
@@ -48,6 +58,10 @@ namespace zcom
         std::unique_ptr<Image> _iconImage = nullptr;
         std::unique_ptr<Label> _titleLabel = nullptr;
         std::vector<std::unique_ptr<Button>> _menuButtons;
+
+        int _titleBarHeight = 0;
+        int _captionHeight = 0;
+        bool _tintIcon = true;
 
         D2D1_COLOR_F _activeItemTint = D2D1::ColorF(0);
         D2D1_COLOR_F _inactiveItemTint = D2D1::ColorF(0.5f, 0.5f, 0.5f);

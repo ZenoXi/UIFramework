@@ -8,13 +8,13 @@ zcom::DefaultNonClientAreaScene::DefaultNonClientAreaScene(App* app, zwnd::Windo
 
 RECT zcom::DefaultNonClientAreaScene::GetResizingBorderWidths()
 {
-    return { 7, 7, 7, 7 };
+    return _resizingBorderWidths;
 }
 
 RECT zcom::DefaultNonClientAreaScene::GetClientAreaMargins()
 {
     // TODO: These don't work when maximizing a window
-    return { 7, 7, 7, 7 };
+    return _clientAreaMargins;
 }
 
 void zcom::DefaultNonClientAreaScene::SetClientAreaBitmap(ID2D1Bitmap* clientAreaBitmap)
@@ -37,6 +37,11 @@ void zcom::DefaultNonClientAreaScene::_Init(SceneOptionsBase* options)
     DefaultNonClientAreaSceneOptions opt;
     if (options)
         opt = *reinterpret_cast<const DefaultNonClientAreaSceneOptions*>(options);
+
+    _resizingBorderWidths = opt.resizingBorderWidths;
+    _clientAreaMargins = opt.clientAreaMargins;
+    _drawWindowShadow = opt.drawWindowShadow;
+    _drawWindowBorder = opt.drawWindowBorder;
 
     _windowActivationSubscription = _window->SubscribeToWindowMessages(nullptr);
 }
@@ -117,14 +122,17 @@ ID2D1Bitmap* zcom::DefaultNonClientAreaScene::_Draw(Graphics g)
     g.target->SetTarget(_ccanvas);
     g.target->Clear();
 
-    // Draw client area shadow
-    ID2D1Effect* shadowEffect = nullptr;
-    g.target->CreateEffect(CLSID_D2D1Shadow, &shadowEffect);
-    shadowEffect->SetInput(0, _clientAreaBitmap);
-    shadowEffect->SetValue(D2D1_SHADOW_PROP_COLOR, _shadowColor);
-    shadowEffect->SetValue(D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, 3.0f);
-    g.target->DrawImage(shadowEffect, D2D1::Point2F(clientAreaMargins.left, clientAreaMargins.top));
-    shadowEffect->Release();
+    if (_drawWindowShadow)
+    {
+        // Draw client area shadow
+        ID2D1Effect* shadowEffect = nullptr;
+        g.target->CreateEffect(CLSID_D2D1Shadow, &shadowEffect);
+        shadowEffect->SetInput(0, _clientAreaBitmap);
+        shadowEffect->SetValue(D2D1_SHADOW_PROP_COLOR, _shadowColor);
+        shadowEffect->SetValue(D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, 3.0f);
+        g.target->DrawImage(shadowEffect, D2D1::Point2F(clientAreaMargins.left, clientAreaMargins.top));
+        shadowEffect->Release();
+    }
 
     // Draw content bitmap to window
     g.target->DrawBitmap(
@@ -137,18 +145,20 @@ ID2D1Bitmap* zcom::DefaultNonClientAreaScene::_Draw(Graphics g)
         )
     );
 
-    // Draw window border
-    ID2D1SolidColorBrush* borderBrush;
-    g.target->CreateSolidColorBrush(_borderColor, &borderBrush);
-    D2D1_RECT_F borderRect = {
-        clientAreaMargins.left - 0.5f,
-        clientAreaMargins.top - 0.5f,
-        _canvas->GetWidth() - (clientAreaMargins.right - 0.5f),
-        _canvas->GetHeight() - (clientAreaMargins.bottom - 0.5f)
-    };
-    g.target->DrawRectangle(borderRect, borderBrush);
-    borderBrush->Release();
-    
+    if (_drawWindowBorder)
+    {
+        // Draw window border
+        ID2D1SolidColorBrush* borderBrush;
+        g.target->CreateSolidColorBrush(_borderColor, &borderBrush);
+        D2D1_RECT_F borderRect = {
+            clientAreaMargins.left - 0.5f,
+            clientAreaMargins.top - 0.5f,
+            _canvas->GetWidth() - (clientAreaMargins.right - 0.5f),
+            _canvas->GetHeight() - (clientAreaMargins.bottom - 0.5f)
+        };
+        g.target->DrawRectangle(borderRect, borderBrush);
+        borderBrush->Release();
+    }
 
     // Draw scene elements
     if (_canvas->Redraw())
