@@ -62,89 +62,25 @@ int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
         break;
     }
 
-    // Create window
-    //DisplayWindow window(hInst, cmdLine, L"class");
-
-    // Load resources
-    //ResourceManagerOld::Init("Resources/Images/resources.resc", window.gfx.GetGraphics().target);
-
-    // Init app
-    //App::Init(window);
-
-    // Init appropriate scenes
-    //App::Instance()->InitScene(EntryScene::StaticName(), nullptr);
-
     App app(hInst);
-
-    //std::optional<zwnd::WindowId> id1 = app.CreateTopWindow(
-    //    zwnd::WindowProperties().WindowClassName(L"wndClass1").InitialSize(1280, 720).MainWindow(),
-    //    [](zwnd::Window* wnd)
-    //    {
-    //        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
-    //        wnd->resourceManager.InitAllImages();
-    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
-    //        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
-    //        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
-    //        //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
-    //    }
-    //);
 
     std::optional<zwnd::WindowId> id2 = app.CreateTopWindow(
         zwnd::WindowProperties()
             .WindowClassName(L"wndClass2")
             .InitialSize(720, 720)
+            .TopMost()
             .MainWindow(),
         [](zwnd::Window* wnd)
         {
             wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
             wnd->resourceManager.InitAllImages();
             wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
-            wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
+            zcom::DefaultTitleBarSceneOptions opt;
+            wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(&opt);
             wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
             //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
         }
     );
-
-    //std::optional<zwnd::WindowId> id3 = app.CreateToolWindow(
-    //    id2.value(),
-    //    zwnd::WindowProperties().WindowClassName(L"wndClass3").InitialSize(500, 500),
-    //    [](zwnd::Window* wnd)
-    //    {
-    //        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
-    //        wnd->resourceManager.InitAllImages();
-    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
-    //        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
-    //        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
-    //        //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
-    //    }
-    //);
-
-    //std::optional<zwnd::WindowId> id4 = app.CreateChildWindow(
-    //    id2.value(),
-    //    zwnd::WindowProperties().WindowClassName(L"wndClass4").InitialSize(500, 500),
-    //    [](zwnd::Window* wnd)
-    //    {
-    //        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
-    //        wnd->resourceManager.InitAllImages();
-    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
-    //        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
-    //        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
-    //        //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
-    //    }
-    //);
-
-    //std::optional<zwnd::WindowId> id3 = app.CreateTopWindow(
-    //    zwnd::WindowProperties().WindowClassName(L"wndClass3").InitialSize(500, 500),
-    //    [](zwnd::Window* wnd)
-    //    {
-    //        wnd->resourceManager.SetImageResourceFilePath("Resources/Images/resources.resc");
-    //        wnd->resourceManager.InitAllImages();
-    //        wnd->LoadNonClientAreaScene<zcom::DefaultNonClientAreaScene>(nullptr);
-    //        wnd->LoadTitleBarScene<zcom::DefaultTitleBarScene>(nullptr);
-    //        wnd->LoadStartingScene<zcom::EntryScene>(nullptr);
-    //        //wnd->LoadStartingScene<zcom::TestScene>(nullptr);
-    //    }
-    //);
 
     while (true)
     {

@@ -47,7 +47,7 @@ namespace zcom
     {
 #pragma region base_class
     protected:
-        void _OnDraw(Graphics g) override
+        void _OnDraw(Graphics g)
         {
             // Create resources
             if (!_textBrush)
@@ -100,13 +100,12 @@ namespace zcom
             }
         }
 
-        void _OnResize(int width, int height) override
+        void _OnResize(int width, int height)
         {
-            if (width != _currentLayoutWidth || height != _currentLayoutHeight)
-                _CreateTextLayout(true);
+            _CreateTextLayout();
         }
 
-        EventTargets _OnLeftPressed(int x, int y) override
+        EventTargets _OnLeftPressed(int x, int y)
         {
             if (_textSelectable)
             {
@@ -123,13 +122,13 @@ namespace zcom
             return EventTargets().Add(this, x, y);
         }
 
-        EventTargets _OnLeftReleased(int x, int y) override
+        EventTargets _OnLeftReleased(int x, int y)
         {
             _selecting = false;
             return EventTargets().Add(this, x, y);
         }
 
-        EventTargets _OnMouseMove(int x, int y, int deltaX, int deltaY) override
+        EventTargets _OnMouseMove(int deltaX, int deltaY)
         {
             if (deltaX == 0 && deltaY == 0)
                 return EventTargets().Add(this, GetMousePosX(), GetMousePosY());
@@ -151,17 +150,17 @@ namespace zcom
 
             return EventTargets().Add(this, GetMousePosX(), GetMousePosY());
         }
- 
-        void _OnSelected(bool reverse) override;
 
-        void _OnDeselected() override;
+        void _OnSelected(bool reverse);
 
-        bool _OnHotkey(int id) override
+        void _OnDeselected();
+
+        bool _OnHotkey(int id)
         {
             return false;
         }
 
-        bool _OnKeyDown(BYTE vkCode) override
+        bool _OnKeyDown(BYTE vkCode)
         {
             if (vkCode == 'C' && KeyState('C', KMOD_CONTROL))
             {
@@ -217,12 +216,12 @@ namespace zcom
             return false;
         }
 
-        bool _OnKeyUp(BYTE vkCode) override
+        bool _OnKeyUp(BYTE vkCode)
         {
             return false;
         }
 
-        bool _OnChar(wchar_t ch) override
+        bool _OnChar(wchar_t ch)
         {
             return false;
         }
@@ -230,7 +229,9 @@ namespace zcom
         void _CreateTextFormat()
         {
             if (_dwriteTextFormat)
+            {
                 _dwriteTextFormat->Release();
+            }
 
             _dwriteFactory->CreateTextFormat(
                 _font.c_str(),
@@ -247,98 +248,38 @@ namespace zcom
             _textFormatChangedEvent->InvokeAll(this);
         }
 
-        void _CreateTextLayout(bool ignoreAutoSizing = false)
+        void _CreateTextLayout()
         {
             float finalWidth = GetWidth() - _margins.left - _margins.right;
             float finalHeight = GetHeight() - _margins.top - _margins.bottom;
             if (finalWidth <= 0) finalWidth = 1.f;
             if (finalHeight <= 0) finalHeight = 1.f;
 
-            if (_dwriteTextLayout)
-            {
-                _dwriteTextLayout->Release();
-                _dwriteTextLayout = nullptr;
-            }
+            std::wstring finalText = _text;
+            size_t charactersCut = 0;
 
-            if (_autoWidth || _autoHeight)
+            while (true)
             {
-                float newFinalWidth = finalWidth;
-                float newFinalHeight = finalHeight;
+                if (_dwriteTextLayout)
+                {
+                    _dwriteTextLayout->Release();
+                }
 
+                // Create the text layout
                 _dwriteFactory->CreateTextLayout(
-                    _text.c_str(),
-                    (UINT32)_text.length(),
+                    finalText.c_str(),
+                    (UINT32)finalText.length(),
                     _dwriteTextFormat,
                     finalWidth,
                     finalHeight,
                     &_dwriteTextLayout
                 );
-                _dwriteTextLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
-                DWRITE_TEXT_METRICS textMetrics;
-                _dwriteTextLayout->GetMetrics(&textMetrics);
-
-                if (_autoWidth)
+                // Wrapping
+                if (!_wrapText)
                 {
-                    newFinalWidth = std::ceilf(textMetrics.width);
-                    if (newFinalWidth < _minAutoWidth)
-                        newFinalWidth = _minAutoWidth;
-                    if (newFinalWidth > _maxAutoHeight)
-                        newFinalWidth = _maxAutoHeight;
+                    _dwriteTextLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
                 }
-                if (_autoHeight)
-                {
-                    if (_wrapText)
-                    {
-                        _dwriteTextLayout->Release();
-                        _dwriteFactory->CreateTextLayout(
-                            _text.c_str(),
-                            (UINT32)_text.length(),
-                            _dwriteTextFormat,
-                            newFinalWidth,
-                            finalHeight,
-                            &_dwriteTextLayout
-                        );
-
-                        _dwriteTextLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
-                        _dwriteTextLayout->GetMetrics(&textMetrics);
-                    }
-                    newFinalHeight = std::ceilf(textMetrics.height);
-                    if (newFinalHeight < _minAutoHeight)
-                        newFinalHeight = _minAutoHeight;
-                    if (newFinalHeight > _maxAutoHeight)
-                        newFinalHeight = _maxAutoHeight;
-                }
-
-                if (finalWidth != newFinalWidth || finalHeight != newFinalHeight)
-                {
-                    _dwriteTextLayout->Release();
-                    _dwriteTextLayout = nullptr;
-                }
-
-                finalWidth = newFinalWidth;
-                finalHeight = newFinalHeight;
-            }
-
-            std::wstring finalText = _text;
-            size_t charactersCut = 0;
-            //BinarySearchIterator it = BinarySearchIterator(_text.size());
-
-            while (true)
-            {
-                if (!_dwriteTextLayout)
-                {
-                    _dwriteFactory->CreateTextLayout(
-                        finalText.c_str(),
-                        (UINT32)finalText.length(),
-                        _dwriteTextFormat,
-                        finalWidth,
-                        finalHeight,
-                        &_dwriteTextLayout
-                    );
-                }
-
-                _dwriteTextLayout->SetWordWrapping(_wrapText ? DWRITE_WORD_WRAPPING_WRAP : DWRITE_WORD_WRAPPING_NO_WRAP);
 
                 // If a cutoff is specified, truncate the text until it fits (including the cutoff sequence)
                 if (!_cutoff.empty())
@@ -366,9 +307,6 @@ namespace zcom
                 {
                     break;
                 }
-
-                if (_dwriteTextLayout)
-                    _dwriteTextLayout->Release();
             }
 
             if (!_customHoverText)
@@ -380,36 +318,36 @@ namespace zcom
                     Component::SetHoverText(L"");
             }
 
+            // Alignment
             if (_hTextAlignment == TextAlignment::LEADING)
+            {
                 _dwriteTextLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            }
             else if (_hTextAlignment == TextAlignment::CENTER)
+            {
                 _dwriteTextLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            }
             else if (_hTextAlignment == TextAlignment::JUSTIFIED)
+            {
                 _dwriteTextLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_JUSTIFIED);
+            }
             else if (_hTextAlignment == TextAlignment::TRAILING)
+            {
                 _dwriteTextLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+            }
 
+            // Effects
             if (_underlineRange.length != 0)
                 _dwriteTextLayout->SetUnderline(true, _underlineRange);
             if (_strikethroughRange.length != 0)
                 _dwriteTextLayout->SetStrikethrough(true, _strikethroughRange);
-
-            _currentLayoutWidth = finalWidth + _margins.left + _margins.right;
-            _currentLayoutHeight = finalHeight + _margins.top + _margins.bottom;
-            if (_autoWidth || _autoHeight)
-            {
-                int newBaseWidth = _autoWidth ? _currentLayoutWidth : GetBaseWidth();
-                int newBaseHeight = _autoHeight ? _currentLayoutHeight : GetBaseWidth();
-                //std::cout << _currentLayoutWidth << ":" << _currentLayoutHeight << '\n';
-                SetBaseSize(newBaseWidth, newBaseHeight);
-            }
 
             InvokeRedraw();
             _textLayoutChangedEvent->InvokeAll(this);
         }
 
     public:
-        const char* GetName() const override { return Name(); }
+        const char* GetName() const { return Name(); }
         static const char* Name() { return "label"; }
 #pragma endregion
 
@@ -421,16 +359,6 @@ namespace zcom
         std::wstring _cutoff = L"";
         RECT_F _margins = { 0, 0, 0, 0 };
         bool _customHoverText = false;
-
-        int _currentLayoutWidth = 0;
-        int _currentLayoutHeight = 0;
-
-        bool _autoHeight = false;
-        bool _autoWidth = false;
-        int _minAutoWidth = 0;
-        int _minAutoHeight = 0;
-        int _maxAutoWidth = std::numeric_limits<int>::max();
-        int _maxAutoHeight = std::numeric_limits<int>::max();
 
         std::wstring _font = L"Calibri";
         float _fontSize = 14.0f;
@@ -786,152 +714,6 @@ namespace zcom
             DWRITE_TEXT_METRICS metrics;
             _dwriteTextLayout->GetMetrics(&metrics);
             return metrics;
-        }
-
-        void AutomaticWidth()
-        {
-            if (!_autoWidth)
-            {
-                _autoWidth = true;
-                _CreateTextLayout();
-            }
-        }
-
-        void AutomaticHeight()
-        {
-            if (!_autoHeight)
-            {
-                _autoHeight = true;
-                _CreateTextLayout();
-            }
-        }
-
-        void AutomaticSize()
-        {
-            if (!_autoWidth || !_autoHeight)
-            {
-                _autoWidth = true;
-                _autoHeight = true;
-                _CreateTextLayout();
-            }
-        }
-
-        void FixedWidth()
-        {
-            if (_autoWidth)
-            {
-                _autoWidth = false;
-                _CreateTextLayout();
-            }
-        }
-
-        void FixedHeight()
-        {
-            if (_autoHeight)
-            {
-                _autoHeight = false;
-                _CreateTextLayout();
-            }
-        }
-
-        void FixedSize()
-        {
-            if (_autoWidth || _autoHeight)
-            {
-                _autoWidth = false;
-                _autoHeight = false;
-                _CreateTextLayout();
-            }
-        }
-
-        void SetMinAutoWidth(int minWidth)
-        {
-            if (_minAutoWidth == minWidth)
-                return;
-
-            _minAutoWidth = minWidth;
-            if (_autoWidth)
-                _CreateTextLayout();
-        }
-
-        void SetMinAutoHeight(int minHeight)
-        {
-            if (_minAutoHeight == minHeight)
-                return;
-
-            _minAutoHeight = minHeight;
-            if (_autoHeight)
-                _CreateTextLayout();
-        }
-
-        void SetMaxAutoWidth(int maxWidth)
-        {
-            if (_maxAutoWidth == maxWidth)
-                return;
-
-            _maxAutoWidth = maxWidth;
-            if (_autoWidth)
-                _CreateTextLayout();
-        }
-
-        void SetMaxAutoHeight(int maxHeight)
-        {
-            if (_maxAutoHeight == maxHeight)
-                return;
-
-            _maxAutoHeight = maxHeight;
-            if (_autoHeight)
-                _CreateTextLayout();
-        }
-
-        int GetMinAutoWidth() const
-        {
-            return _minAutoWidth;
-        }
-
-        int GetMinAutoHeight() const
-        {
-            return _minAutoHeight;
-        }
-
-        int GetMaxAutoWidth() const
-        {
-            return _maxAutoWidth;
-        }
-
-        int GetMaxAutoHeight() const
-        {
-            return _maxAutoHeight;
-        }
-
-        void SetWidthAutoResize(bool automatic)
-        {
-            SetAutoResize(automatic, _autoHeight);
-        }
-
-        void SetHeightAutoResize(bool automatic)
-        {
-            SetAutoResize(_autoWidth, automatic);
-        }
-
-        void SetAutoResize(bool autoWidth, bool autoHeight)
-        {
-            if (_autoWidth == autoWidth && _autoHeight == autoHeight)
-                return;
-
-            _autoWidth = autoWidth;
-            _autoHeight = autoHeight;
-            _CreateTextLayout();
-        }
-
-        bool IsWidthAutoResize() const
-        {
-            return _autoWidth;
-        }
-
-        bool IsHeightAutoResize() const
-        {
-            return _autoWidth;
         }
 
     protected:

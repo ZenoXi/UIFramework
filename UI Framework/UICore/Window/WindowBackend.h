@@ -23,11 +23,28 @@
 
 namespace zwnd
 {
+    enum AppMessages
+    {
+        WM_APP_UNUSED = WM_APP,
+        WM_APP_KILL_MESSAGE_LOOP,
+        WM_APP_SET_FULLSCREEN_STATE,
+        WM_APP_SET_CURSOR_VISIBILITY,
+        WM_APP_SET_WINDOW_RECT,
+        WM_APP_SET_WINDOW_DISPLAY,
+        WM_APP_SET_CURSOR_ICON
+    };
+
     struct MessageWindowSize
     {
         int width;
         int height;
         bool changed;
+    };
+
+    enum class MouseWindowInteraction
+    {
+        DEFAULT, // Mouse interacts with the window as usual
+        PASS_THROUGH // The window is invisible to mouse events
     };
 
     class LayeredWindowInfo
@@ -122,6 +139,8 @@ namespace zwnd
         WindowBackend& operator=(const WindowBackend&) = delete;
         ~WindowBackend();
 
+        void KillMessageLoop();
+
         HWND GetHWND() const { return _hwnd; }
 
         // Causes the handler of WM_WINDOWPOSCHANGING message to wait until UnlockSize()
@@ -134,7 +153,8 @@ namespace zwnd
 
         void UpdateLayeredWindow();
 
-        bool ProcessMessages();
+        void ProcessMessages();
+        bool ProcessSingleMessage();
         void ProcessQueueMessages(std::function<void(WindowMessage)> callback);
 
         void AddKeyboardHandler(KeyboardEventHandler* handler);
@@ -172,9 +192,11 @@ namespace zwnd
         void SetCursorVisibility(bool visible);
         // Resets screen shutoff timer
         void ResetScreenTimer();
+        // Sets how the mouse interacts with the window
+        void SetMouseInteraction(MouseWindowInteraction interactionType);
 
-        void HandleFullscreenChange();
-        void HandleCursorVisibility();
+        void HandleFullscreenChange(bool fullscreen);
+        void HandleCursorVisibilityChange(bool visible);
 
         void SetResizingBorderMargins(RECT margins);
         void SetClientAreaMargins(RECT margins);
@@ -204,6 +226,11 @@ namespace zwnd
         int _messageHeight;
         std::mutex _m_windowSize;
 
+        int _minWidth;
+        int _minHeight;
+        int _maxWidth;
+        int _maxHeight;
+
         // Should be set to true, when displaying the window for the first time using ShowWindow().
         // When this flag is set, WM_WINDOWPOSCHANGING and WM_SIZE won't use a mutex, since certain
         // SW_*** flags result in WM_SIZE messages with a preceding WM_WINDOWPOSCHANGING message
@@ -211,13 +238,10 @@ namespace zwnd
         bool _insideInitialShowWindowCall = false;
         bool _initialShowWindowCallDone = false;
 
-        bool _fullscreen = false;
         bool _maximized = false;
         bool _minimized = false;
         RECT _windowedRect;
         bool _windowedMaximized;
-        bool _cursorVisible = true;
-        bool _cursorVisibilityChanged = false;
 
         bool _activationDisabled = false;
 
@@ -227,8 +251,11 @@ namespace zwnd
         // Flag that gets set to true when window sizing (or moving, but moving is irrelevant) starts
         bool _sizingStarted = false;
 
-        bool _fullscreenChanged = false;
-        std::mutex _m_fullscreen;
+        std::atomic<bool> _fullscreen = false;
+        bool _fullscreenInternal = false;
+
+        bool _cursorVisible = true;
+        bool _cursorInClientArea = false;
 
         std::mutex _m_hittest;
         RECT _resizingBorderMargins;
@@ -282,6 +309,8 @@ namespace zwnd
         void SetCursorVisibility(bool visible) { _wnd->SetCursorVisibility(visible); }
         // Resets screen shutoff timer
         void ResetScreenTimer() { _wnd->ResetScreenTimer(); }
+        // Sets how the mouse interacts with the window
+        void SetMouseInteraction(MouseWindowInteraction interactionType) { _wnd->SetMouseInteraction(interactionType); }
 
         void AddKeyboardHandler(KeyboardEventHandler* handler) { _wnd->AddKeyboardHandler(handler); }
         bool RemoveKeyboardHandler(KeyboardEventHandler* handler) { return _wnd->RemoveKeyboardHandler(handler); }

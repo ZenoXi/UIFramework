@@ -11,6 +11,7 @@ App::App(HINSTANCE hinst)
 
 App::~App()
 {
+    _messageWindow->Close();
     _closeThread.store(true);
     if (_windowCleaningThread.joinable())
         _windowCleaningThread.join();

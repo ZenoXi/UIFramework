@@ -160,11 +160,13 @@
     <ClCompile Include="UICore\Components\Base\Checkbox.cpp" />
     <ClCompile Include="UICore\Components\Base\ComponentBase.cpp" />
     <ClCompile Include="UICore\Components\Base\FlexPanel.cpp" />
+    <ClCompile Include="UICore\Components\Base\KeySelector.cpp" />
     <ClCompile Include="UICore\Components\Base\Label.cpp" />
     <ClCompile Include="UICore\Components\Base\MenuItem.cpp" />
     <ClCompile Include="UICore\Components\Base\MenuPanel.cpp" />
     <ClCompile Include="UICore\Components\Base\NumberInput.cpp" />
     <ClCompile Include="UICore\Components\Base\ScrollPanel.cpp" />
+    <ClCompile Include="UICore\Components\Base\Slider.cpp" />
     <ClCompile Include="UICore\Components\Base\TextInput.cpp" />
     <ClCompile Include="UICore\D2DEffects\TintEffect.cpp" />
     <ClCompile Include="UICore\Helper\StringHelper.cpp" />
@@ -195,8 +197,9 @@
     <ClInclude Include="UICore\Components\Base\Canvas.h" />
     <ClInclude Include="UICore\Components\Base\Checkbox.h" />
     <ClInclude Include="UICore\Components\Base\ComponentBase.h" />
-    <ClInclude Include="UICore\Components\Base\EmptyPanel.h" />
+    <ClInclude Include="UICore\Components\Base\Dummy.h" />
     <ClInclude Include="UICore\Components\Base\FlexPanel.h" />
+    <ClInclude Include="UICore\Components\Base\KeySelector.h" />
     <ClInclude Include="UICore\Components\Base\MenuTemplate.h" />
     <ClInclude Include="UICore\Components\Base\Image.h" />
     <ClInclude Include="UICore\Components\Base\Label.h" />
@@ -205,6 +208,7 @@
     <ClInclude Include="UICore\Components\Base\NumberInput.h" />
     <ClInclude Include="UICore\Components\Base\Panel.h" />
     <ClInclude Include="UICore\Components\Base\ScrollPanel.h" />
+    <ClInclude Include="UICore\Components\Base\Slider.h" />
     <ClInclude Include="UICore\Components\Base\TextInput.h" />
     <ClInclude Include="UICore\Components\ComHelper.h" />
     <ClInclude Include="UICore\Components\Custom\DitheredBackground.h" />

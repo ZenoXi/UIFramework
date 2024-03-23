@@ -99,33 +99,33 @@ void zcom::EntryScene::_Init(SceneOptionsBase* options)
         _window->Fullscreen(!_window->Fullscreen());
     }).Detach();
 
-    auto panel1 = Create<ScrollPanel>();
-    panel1->SetBaseSize(300, 300);
-    panel1->Scrollable(Scrollbar::VERTICAL, true);
-    panel1->SetBorderVisibility(true);
+    //auto panel1 = Create<ScrollPanel>();
+    //panel1->SetBaseSize(300, 300);
+    //panel1->Scrollable(Scrollbar::VERTICAL, true);
+    //panel1->SetBorderVisibility(true);
 
-    auto panel1_5 = Create<ScrollPanel>();
-    panel1_5->SetBaseSize(200, 400);
-    panel1_5->SetOffsetPixels(50, 50);
-    panel1_5->SetPadding({ 0, 25, 0, 500 });
-    panel1_5->SetBorderVisibility(true);
+    //auto panel1_5 = Create<ScrollPanel>();
+    //panel1_5->SetBaseSize(200, 400);
+    //panel1_5->SetOffsetPixels(50, 50);
+    //panel1_5->SetPadding({ 0, 25, 0, 500 });
+    //panel1_5->SetBorderVisibility(true);
 
-    auto panel2 = Create<ScrollPanel>();
-    panel2->SetBaseSize(200, 400);
-    panel2->Scrollable(Scrollbar::VERTICAL, true);
+    //auto panel2 = Create<ScrollPanel>();
+    //panel2->SetBaseSize(200, 400);
+    //panel2->Scrollable(Scrollbar::VERTICAL, true);
 
-    auto panel3 = Create<Panel>();
-    panel3->SetBaseSize(150, 500);
-    panel3->SetOffsetPixels(25, 0);
-    panel3->SetBorderVisibility(true);
+    //auto panel3 = Create<Panel>();
+    //panel3->SetBaseSize(150, 500);
+    //panel3->SetOffsetPixels(25, 0);
+    //panel3->SetBorderVisibility(true);
 
-    panel2->AddItem(std::move(panel3));
-    panel1_5->AddItem(std::move(panel2));
-    panel1->AddItem(std::move(panel1_5));
+    //panel2->AddItem(std::move(panel3));
+    //panel1_5->AddItem(std::move(panel2));
+    //panel1->AddItem(std::move(panel1_5));
 
     _canvas->AddComponent(_button.get());
     _canvas->AddComponent(_button2.get());
-    _canvas->AddComponent(panel1.release());
+    //_canvas->AddComponent(panel1.release());
     //_canvas->AddComponent(_background.get());
     //_canvas->AddComponent(_helloWorldLabel.get());
     //_canvas->AddComponent(_testPanel.get());

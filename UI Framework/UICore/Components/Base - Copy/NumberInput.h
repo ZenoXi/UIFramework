@@ -54,16 +54,6 @@ namespace zcom
             _UpdateText();
         }
 
-        void StepUp()
-        {
-            SetValue(GetValue() + GetStepSize());
-        }
-
-        void StepDown()
-        {
-            SetValue(GetValue() - GetStepSize());
-        }
-
         void SetPrecision(int precision)
         {
             if (precision < 0)
@@ -108,7 +98,69 @@ namespace zcom
         friend class Scene;
         friend class Component;
         NumberInput(Scene* scene) : TextInput(scene) {}
-        void Init();
+        void Init()
+        {
+            TextInput::Init();
+            SetTextAreaMargins({ 0, 0, 19, 0 });
+
+            auto valueUpButton = Create<Button>(L"");
+            valueUpButton->SetBaseWidth(19);
+            valueUpButton->SetParentHeightPercent(0.5f);
+            valueUpButton->SetAlignment(Alignment::END, Alignment::START);
+            valueUpButton->SetPreset(ButtonPreset::NO_EFFECTS);
+            valueUpButton->SetButtonImageAll(ResourceManagerOld::GetImage("menu_arrow_up_7x7"));
+            valueUpButton->ButtonImage()->SetPlacement(ImagePlacement::BOTTOM_CENTER);
+            valueUpButton->ButtonImage()->SetImageOffsetY(-1.0f);
+            valueUpButton->ButtonImage()->SetPixelSnap(true);
+            valueUpButton->UseImageParamsForAll(valueUpButton->ButtonImage());
+            valueUpButton->ButtonImage()->SetTintColor(D2D1::ColorF(0.5f, 0.5f, 0.5f));
+            valueUpButton->ButtonHoverImage()->SetTintColor(D2D1::ColorF(D2D1::ColorF::DodgerBlue));
+            valueUpButton->ButtonClickImage()->SetTintColor(D2D1::ColorF(D2D1::ColorF::DodgerBlue));
+            valueUpButton->SetSelectable(false);
+            valueUpButton->SetActivation(zcom::ButtonActivation::PRESS);
+            valueUpButton->SubscribeOnActivated([&]()
+            {
+                _UpdateValue();
+                SetValue(_value + _stepSize);
+            }).Detach();
+
+            auto valueDownButton = Create<Button>(L"");
+            valueDownButton->SetBaseWidth(19);
+            valueDownButton->SetParentHeightPercent(0.5f);
+            valueDownButton->SetAlignment(Alignment::END, Alignment::END);
+            valueDownButton->SetPreset(ButtonPreset::NO_EFFECTS);
+            valueDownButton->SetButtonImageAll(ResourceManagerOld::GetImage("menu_arrow_down_7x7"));
+            valueDownButton->ButtonImage()->SetPlacement(ImagePlacement::TOP_CENTER);
+            valueDownButton->ButtonImage()->SetImageOffsetY(1.0f);
+            valueDownButton->ButtonImage()->SetPixelSnap(true);
+            valueDownButton->UseImageParamsForAll(valueDownButton->ButtonImage());
+            valueDownButton->ButtonImage()->SetTintColor(D2D1::ColorF(0.5f, 0.5f, 0.5f));
+            valueDownButton->ButtonHoverImage()->SetTintColor(D2D1::ColorF(D2D1::ColorF::DodgerBlue));
+            valueDownButton->ButtonClickImage()->SetTintColor(D2D1::ColorF(D2D1::ColorF::DodgerBlue));
+            valueDownButton->SetSelectable(false);
+            valueDownButton->SetActivation(zcom::ButtonActivation::PRESS);
+            valueDownButton->SubscribeOnActivated([&]()
+            {
+                _UpdateValue();
+                SetValue(_value - _stepSize);
+            }).Detach();
+
+            AddItem(std::move(valueUpButton));
+            AddItem(std::move(valueDownButton));
+
+            _value = 0;
+            _minValue = std::numeric_limits<int32_t>::min();
+            _maxValue = std::numeric_limits<int32_t>::max();
+            _stepSize = 1;
+            _UpdateText();
+
+            SetPattern(L"^[-\\.0-9]+$");
+            SubscribeOnTextChanged([&](Label* label, std::wstring* newText)
+            {
+                if (!_internalChange)
+                    _UpdateValue();
+            }).Detach();
+        }
     public:
         ~NumberInput()
         {
@@ -133,7 +185,9 @@ namespace zcom
     private:
         void _UpdateValue()
         {
-            SetValue(NumberInputValue(wstring_to_string(Text()->GetText())));
+            NumberInputValue number(wstring_to_string(Text()->GetText()));
+            SetValue(number);
+            _UpdateText();
         }
 
         void _UpdateText()
@@ -163,20 +217,25 @@ namespace zcom
 
 #pragma region base_class
     protected:
-        void _OnDeselected() override
+        EventTargets _OnMouseMove(int deltaX, int deltaY)
+        {
+            return TextInput::_OnMouseMove(deltaX, deltaY);
+        }
+
+        void _OnDeselected()
         {
             TextInput::_OnDeselected();
             _UpdateValue();
         }
 
-        EventTargets _OnWheelUp(int x, int y) override
+        EventTargets _OnWheelUp(int x, int y)
         {
             _UpdateValue();
             SetValue(_value + _stepSize);
             return EventTargets().Add(this, x, y);
         }
 
-        EventTargets _OnWheelDown(int x, int y) override
+        EventTargets _OnWheelDown(int x, int y)
         {
             _UpdateValue();
             SetValue(_value - _stepSize);
@@ -184,7 +243,7 @@ namespace zcom
         }
 
     public:
-        const char* GetName() const override { return Name(); }
+        const char* GetName() const { return Name(); }
         static const char* Name() { return "number_input"; }
 #pragma endregion
     };

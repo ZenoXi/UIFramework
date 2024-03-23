@@ -102,6 +102,12 @@
     <ClCompile Include="UICore\Components\Base\ScrollPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UICore\Components\Base\KeySelector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UICore\Components\Base\Slider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UICore\App.h">
@@ -119,7 +125,7 @@
     <ClInclude Include="UICore\Components\Base\ComponentBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UICore\Components\Base\EmptyPanel.h">
+    <ClInclude Include="UICore\Components\Base\Dummy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UICore\Components\Base\Image.h">
@@ -264,6 +270,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UICore\Components\Base\ScrollPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Components\Base\KeySelector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Components\Base\Slider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
