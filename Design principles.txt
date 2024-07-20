@@ -73,3 +73,76 @@ Message thread:
  - Receive WM_SIZE
  - Unlock message size
 
+Main thread:
+ 
+
+
+
+
+
+FlexPanel properties:
+- Direction
+- Spacing
+- Item alignment
+- Size fixed
+
+Item size/position properties:
+- Base size
+- Parent size ratio
+- Offset
+- Offset percent
+- Self alignment
+- FlexGrow
+- FlexShrink
+- FlexMaxSize
+- FlexMinSize
+- FlexAlign (does not separate into horizontal/vertical components, instead is applied perpendicular to flex direction)
+
+Direction:
+- When direction is horizontal:
+	horizontal alignment is ignored
+	horizontal offset percent is ignored
+- When direction is vertical
+	vertical alignment is ignored
+	vertical offset percent is ignored
+
+Item alignment:
+- When item alignment is set:
+	self alignment is ignored, but FlexAlign can overwrite the item alignment
+
+
+##### FIXED #####
+
+Size:
+- Parent size ratio + base size
+- When FlexGrow is applied and fixed size items dont fill the panel size, the item expands from calculated size up to FlexMaxSize (if specified)
+- When FlexShrink is applied and fixed size items overfill the panel size, the item shrinks from calculated size down to FlexMinSize (if specified)
+Offset along the flex direction:
+- After size is calculated, items are placed in the flex direction one after another, separated by specified spacing
+- Base offset is applied
+- Offset percent and self alignment are ignored
+Offset perpendicular to flex direction:
+- If item alignment is set, each item is applied the specified value (unless overriden using FlexAlign), otherwise - self alignment specified by the item is used
+- If START or END alignment is specified, apply offset percent, otherwise - offset percent is ignored
+- Base offset is applied
+
+
+##### NON-FIXED #####
+
+Size:
+- Base size
+- parent percent size, FlexGrow, FlexShrink, FlexMaxSize, FlexMinSize are all ignored
+Offset along flex direction:
+- After size is calculated, items are placed in the flex direction one after another, separated by specified spacing
+- Base offset is applied
+- Offset percent and self alignment are ignored
+Offset perpendicular to flex direction:
+- Alignment is performed as in the fixed case, but using panel size which fits the largest item in the panel
+
+
+
+
+
+
+
+

@@ -135,7 +135,7 @@ IFACEMETHODIMP CustomTintEffect::Initialize(
     fin.seekg(0, std::ios::beg);
     fin.read(data, size);
 
-    HRESULT hr = pContextInternal->LoadPixelShader(GUID_CustomTintShader, (BYTE*)data, size);
+    HRESULT hr = pContextInternal->LoadPixelShader(GUID_CustomTintShader, (BYTE*)data, (UINT32)size);
     if (SUCCEEDED(hr))
         hr = pTransformGraph->SetSingleTransformNode(this);
 

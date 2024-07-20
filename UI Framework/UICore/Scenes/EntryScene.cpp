@@ -4,11 +4,7 @@
 #include "ContextMenuScene.h"
 #include "Components/Base/ScrollPanel.h"
 
-zcom::EntryScene::EntryScene(App* app, zwnd::Window* window)
-    : Scene(app, window)
-{}
-
-void zcom::EntryScene::_Init(SceneOptionsBase* options)
+void zcom::EntryScene::Init(SceneOptionsBase* options)
 {
     EntrySceneOptions opt;
     if (options)
@@ -123,14 +119,14 @@ void zcom::EntryScene::_Init(SceneOptionsBase* options)
     //panel1_5->AddItem(std::move(panel2));
     //panel1->AddItem(std::move(panel1_5));
 
-    _canvas->AddComponent(_button.get());
-    _canvas->AddComponent(_button2.get());
+    _basePanel->AddItem(_button.get());
+    _basePanel->AddItem(_button2.get());
     //_canvas->AddComponent(panel1.release());
     //_canvas->AddComponent(_background.get());
     //_canvas->AddComponent(_helloWorldLabel.get());
     //_canvas->AddComponent(_testPanel.get());
-    _canvas->SetBackgroundColor(D2D1::ColorF(0.1f, 0.1f, 0.1f));
-    _canvas->SetOcclusive(false);
+    _basePanel->SetBackgroundColor(D2D1::ColorF(0.1f, 0.1f, 0.1f));
+    _basePanel->EnableMouseEventFallthrough();
     //_canvas->BasePanel()->SubscribeOnMouseMove([](Component* item, int, int) {
     //    item->InvokeRedraw();
     //}).Detach();
@@ -147,29 +143,4 @@ void zcom::EntryScene::_Init(SceneOptionsBase* options)
     //    brush->Release();
     //}).Detach();
     //_canvas->SetBackgroundColor(D2D1::ColorF(0.0f, 0.0f, 0.0f));
-}
-
-void zcom::EntryScene::_Uninit()
-{
-    _canvas->ClearComponents();
-}
-
-void zcom::EntryScene::_Focus()
-{
-
-}
-
-void zcom::EntryScene::_Unfocus()
-{
-
-}
-
-void zcom::EntryScene::_Update()
-{
-    _canvas->Update();
-}
-
-void zcom::EntryScene::_Resize(int width, int height, ResizeInfo info)
-{
-
 }

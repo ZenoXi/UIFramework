@@ -15,7 +15,7 @@ void zwnd::WindowGraphics::Initialize(HWND* hwnd)
     
     D2D1CreateFactory(
         D2D1_FACTORY_TYPE_MULTI_THREADED,
-        {},
+        { D2D1_DEBUG_LEVEL_INFORMATION },
         p_D2DFactory.GetAddressOf()
     );
 
@@ -221,7 +221,11 @@ void zwnd::WindowGraphics::Lock()
 
 void zwnd::WindowGraphics::Unlock()
 {
+    // Disable not-locked mutex warning
+#pragma warning( push )
+#pragma warning( disable : 26110 )
     _m_gfx.unlock();
+#pragma warning( pop )
 }
 
 Graphics zwnd::WindowGraphics::GetGraphics()

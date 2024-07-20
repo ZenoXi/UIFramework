@@ -13,11 +13,7 @@
 #include "Scenes/DefaultNonClientAreaScene.h"
 #include "Scenes/DefaultTitleBarScene.h"
 #include "Scenes/EntryScene.h"
-#include "Scenes/TestScene.h"
-
 #include "Helper/ResourceManager.h"
-#include "Helper/Time.h"
-#include "Window/DisplayWindow.h"
 #include "Window/Window.h"
 #include "App.h"
 
@@ -25,24 +21,6 @@
 
 int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
 {
-    // Set working directory
-    std::wstring dir;
-    dir.resize(MAX_PATH);
-    GetModuleFileName(NULL, dir.data(), MAX_PATH);
-    auto pos = dir.find_last_of(L"\\/");
-    std::wstring runDir = dir.substr(0, pos);
-    std::wcout << "Executable path: " << dir << '\n';
-
-    if (!SetCurrentDirectory(runDir.data()))
-    {
-        std::cout << "Directory set failed\n";
-        return -1;
-    }
-
-    TCHAR path[MAX_PATH] = { 0 };
-    DWORD a = GetCurrentDirectory(MAX_PATH, path);
-    std::wcout << "New working directory: " << path << '\n';
-
     // Read arguments
     std::vector<std::wstring> args;
     int argCount;
@@ -54,21 +32,12 @@ int WINAPI main(HINSTANCE hInst, HINSTANCE, LPWSTR cmdLine, INT)
     }
     LocalFree(pArgs);
 
-    std::vector<int> vec;
-    //vec.push_back(0);
-    for (auto it = vec.begin(); it != vec.end(); it++)
-    {
-        vec.erase(it);
-        break;
-    }
-
     App app(hInst);
 
     std::optional<zwnd::WindowId> id2 = app.CreateTopWindow(
         zwnd::WindowProperties()
-            .WindowClassName(L"wndClass2")
+            .WindowClassName(L"wndClass")
             .InitialSize(720, 720)
-            .TopMost()
             .MainWindow(),
         [](zwnd::Window* wnd)
         {

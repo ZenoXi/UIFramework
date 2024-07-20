@@ -45,13 +45,7 @@
     <ClCompile Include="UICore\Components\Base\TextInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UICore\Window\DisplayWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="UICore\Helper\ResourceManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="UICore\Scenes\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UICore\Scenes\EntryScene.cpp">
@@ -108,6 +102,12 @@
     <ClCompile Include="UICore\Components\Base\Slider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UICore\Helper\Config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UICore\Components\Base\Toggle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UICore\App.h">
@@ -150,9 +150,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UICore\Components\ComHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UICore\Window\DisplayWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UICore\Window\DragDropEventHandler.h">
@@ -276,6 +273,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UICore\Components\Base\Slider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Helper\AnimationHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Helper\CollectionsHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Helper\ConfigValue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Helper\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Components\Base\Toggle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Window\ResizeFlags.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UICore\Helper\BinarySearchIterator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -82,17 +82,17 @@ public:
 
     EventSubscription<bool, BYTE> SubscribeOnKeyDown(const std::function<bool(BYTE)>& func)
     {
-        _onKeyDownHandlers->Subscribe(func);
+        return _onKeyDownHandlers->Subscribe(func);
     }
 
     EventSubscription<bool, BYTE> SubscribeOnKeyUp(const std::function<bool(BYTE)>& func)
     {
-        _onKeyUpHandlers->Subscribe(func);
+        return _onKeyUpHandlers->Subscribe(func);
     }
 
     EventSubscription<bool, wchar_t> SubscribeOnChar(const std::function<bool(wchar_t)>& func)
     {
-        _onCharHandlers->Subscribe(func);
+        return _onCharHandlers->Subscribe(func);
     }
 
     // 'modifiers' specify which modifiers from 'KeyModifiers' enum must be pressed

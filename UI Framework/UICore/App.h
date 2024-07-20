@@ -4,6 +4,7 @@
 #include "Window/Window.h"
 #include "Helper/Handle.h"
 #include "Helper/EventEmitter.h"
+#include "Helper/Config.h"
 
 #include <mutex>
 #include <optional>
@@ -75,4 +76,7 @@ private:
 
     std::thread _windowCleaningThread;
     std::atomic<bool> _closeThread;
+
+public:
+    Config config;
 };

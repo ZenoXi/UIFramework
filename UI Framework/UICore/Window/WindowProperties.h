@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning( disable : 26815 )
 
 #include "WindowsEx.h"
 #include "WindowDisplayType.h"
@@ -66,7 +67,7 @@ namespace zwnd
         // Indicates whether the window blocks interaction with the parent window
         bool blockParent = false;
 
-
+        
         WindowProperties& WindowClassName(std::wstring name) { windowClassName = name; return *this; }
         WindowProperties& WindowIcon(HICON icon) { windowIcon = icon; return *this; }
         WindowProperties& InitialWidth(int width) { initialWidth = width; return *this; }
